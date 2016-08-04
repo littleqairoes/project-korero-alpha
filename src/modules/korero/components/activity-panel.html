@@ -244,25 +244,24 @@
       setReferViewer: function(val) {
         this.boundingBoxes = {};
         if (val) {
-
           setTimeout(function(){
             console.log('hello there');
             console.log(this.$$('#refer-viewer'))
             this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
             this.canvas = new fabric.Canvas(this.$$('#canvas'));
-
+            var targetMove = false;
+            var target
             this.canvas.on('mouse:down', function (option) {
               console.log(option);
               if (option.target) {
-                var target = option.target;
+                target = option.target;
                 this.canvas.on('mouse:move', function (option) {
                   this.boundingBoxes[target.id].top = target.top;
                   this.boundingBoxes[target.id].left = target.left;
                   this.boundingBoxes[target.id].height = target.height;
                   this.boundingBoxes[target.id].width = target.width;
-                  console.log(this.boundingBoxes[target.id])
+                  targetMove = true;
                 }.bind(this));
-
               } else {
                 var startY = option.e.offsetY;
                 var startX = option.e.offsetX;
@@ -303,8 +302,15 @@
               }
             }.bind(this));
 
-            this.canvas.on('mouse:up', function () {
+            this.canvas.on('mouse:up', function (option) {
               this.canvas.off('mouse:move');
+              if (!targetMove) {
+                delete(this.boundingBoxes[target.id]);
+                console.log(this.boundingBoxes)
+                target.remove();
+              }
+              target = null;
+              targetMove = false;
             }.bind(this));
           }.bind(this), 500)
         }
