@@ -1,0 +1,52 @@
+<link rel="import" href="../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../configs/behaviors/module-behavior.html">
+<link rel="import" href="../layout/main-layout.html">
+<link rel="import" href="pages/korero.html">
+
+<dom-module id="korero-with-layout">
+  <template>
+
+    <style>
+
+    </style>
+
+    <!-- Route manipulation here -->
+    <app-route
+      route="{{moduleRoute}}"
+      pattern="/:page"
+      data="{{moduleData}}"
+      tail="{{subroute}}">
+    </app-route>
+    <!-- Route manipulation ends here -->
+
+    <!-- Put template here -->
+    <main-layout
+      module-route="{{moduleRoute}}"
+      module-name="[[moduleName]]"
+      page="[[page]]"
+      app-title="Korero"
+      >
+      <korero-interface name="korero"></korero-interface>
+    </main-layout>
+    <!-- Put template ends here -->
+
+  </template>
+  <script>
+    Polymer({
+
+      // name of the component
+      is: 'korero-with-layout',
+
+      // behaviors
+      behaviors: [
+        Polymer.ModuleBehavior
+      ],
+
+      _moduleDataChanged(page) {
+        this.page = page || 'korero';
+      },
+
+    });
+  </script>
+</dom-module>

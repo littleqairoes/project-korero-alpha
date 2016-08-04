@@ -1,0 +1,25 @@
+{
+  "name": "project-korero-polymer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "polymer lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/littleqairoes/project-korero-alpha.git"
+  },
+  "author": "TJ Monserrat",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/littleqairoes/project-korero-alpha/issues"
+  },
+  "homepage": "https://github.com/littleqairoes/project-korero-alpha#readme",
+  "dependencies": {
+    "rasterizehtml": "^1.2.2"
+  }
+}

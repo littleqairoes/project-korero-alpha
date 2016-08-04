@@ -1,0 +1,261 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../../../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../../../../bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<script src="./rasterizeHTML.allinone.js"></script>
+<script src="./pdf.js"></script>
+<script src="./pdf.worker.js"></script>
+
+<dom-module id="discussion-panel">
+  <template>
+    <style>
+      :host #discussion-panel-content {
+        width: 100%;
+        overflow: auto;
+      }
+
+      :host #create-discussion-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+      }
+
+      :host .create-discussion-container {
+        width: 98%;
+        margin: 1%;
+        position: relative;
+      }
+
+      :host #option-hover {
+        position: absolute;
+        top: 0;
+        left: 0;
+        display: none;
+        padding: 5px;
+        background-color: #FFF;
+      }
+
+      :host #body {
+        min-height: 20px;
+        padding: 10px;
+        background-color: #FFF;
+      }
+
+      :host .refer-view {
+        padding: 10px;
+      }
+
+      :host .hover {
+        font-weight: bold;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    </style>
+
+    <div id="discussion-panel-content">
+      <template is="dom-if" if="{{createDiscussion}}">
+        <paper-material class="create-discussion-container" id="create-discussion-container">
+          <div style="padding: 20px; padding-top: 10px">
+            <paper-input label="Thread title here..." id="title"></paper-input>
+            <div
+              id="body"
+              contenteditable
+              on-tap="commentChange"
+              on-track="commentChange"
+              >
+            </div>
+
+            <paper-material id="option-hover">
+              <template is="dom-if" if="{{optionsView}}">
+                <paper-icon-button
+                  icon="editor:format-bold"
+                  on-tap="bold">
+                </paper-icon-button>
+                <paper-icon-button
+                  icon="editor:format-italic"
+                  on-tap="italics">
+                </paper-icon-button>
+                <paper-icon-button
+                  icon="editor:insert-drive-file"
+                  on-tap="refer">
+                </paper-icon-button>
+              </template>
+              <template is="dom-if" if="{{referView}}">
+                <div class="refer-view">
+                  <b>Reference this term to:</b><br/>
+                  <paper-button raised>This Lecture Video</paper-button><br/>
+                  <!--<paper-button raised>Other Course Materials</paper-button><br/>-->
+                  <paper-input label="Put link to external PDF" id="external"></paper-input>
+                  <paper-button raised on-tap="link">Upload</paper-button><br/>
+                </div>
+              </template>
+            </paper-material>
+          </div>
+        </paper-material>
+      </template>
+      <paper-fab
+        id="create-discussion-button"
+        icon="icons:add"
+        on-tap="createDiscussionAction">
+      </paper-fab>
+      <paper-tooltip for="create-discussion-button" position="left" animation-delay="0">Add Discussion</paper-tooltip>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'discussion-panel',
+
+      properties: {
+        createDiscussion: {
+          type: Boolean,
+          notifies: true,
+          value: false
+        },
+        openHover: {
+          type: Boolean,
+          notifies: true,
+          value: false
+        },
+        commentBodyElement: {
+          type: Object
+        },
+        optionsView: {
+          type: Boolean,
+          value: true
+        },
+        referView: {
+          type: Boolean
+        },
+        selectedRange: {
+          type: Object
+        },
+        selectedText: {
+          type: String
+        },
+        referViewer: {
+          type: Boolean,
+          notify: true
+        },
+        referViewerImage: {
+          type: Object,
+          notify: true
+        },
+        referViewerPdf: {
+          type: Object,
+          notify: true
+        }
+      },
+
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+
+      _resize: function() {
+        var height = this.windowSize().height;
+        this.$$('#discussion-panel-content').setAttribute('style', `height: ${height - 64}px`)
+      },
+
+      createDiscussionAction: function() {
+        this.createDiscussion = true;
+      },
+
+      closeCreateDiscussionAction: function() {
+        this.createDiscussion = false;
+      },
+
+      commentChange: function(e) {
+        var selected = this.showSelectionDiv();
+        this.optionsView = true;
+        this.referView = false;
+        this.selectedRange = null;
+        this.selectedText = '';
+        if (selected.text && selected.text.length > 0) {
+          var elRect = this.$$('#create-discussion-container').getBoundingClientRect();
+          var top = (selected.pos.top - elRect.top) + selected.pos.height;
+          var left = (selected.pos.left) - elRect.left;
+          this.$$('#option-hover').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`)
+        } else {
+          this.$$('#option-hover').setAttribute('style', `display: none`)
+        }
+      },
+
+      bold: function(e) {
+        var selected = this.showSelectionDiv();
+        if (selected.text && selected.text.length > 0) {
+          var node = document.createElement('b');
+          node.innerHTML = selected.text;
+          selected.range.deleteContents();
+          selected.range.insertNode(node);
+          this.$$('#option-hover').setAttribute('style', `display: none`)
+        }
+      },
+
+      italics: function(e) {
+        var selected = this.showSelectionDiv();
+        if (selected.text && selected.text.length > 0) {
+          var node = document.createElement('i');
+          node.innerHTML = selected.text;
+          selected.range.deleteContents();
+          selected.range.insertNode(node);
+          this.$$('#option-hover').setAttribute('style', `display: none`)
+        }
+      },
+
+      refer: function(e) {
+        var selected = this.showSelectionDiv();
+        if (selected.text && selected.text.length > 0) {
+          var node = document.createElement('span');
+          node.innerHTML = selected.text;
+          this.selectedText = selected.text;
+          this.selectedRange = selected.range;
+          node.setAttribute('style', 'background-color: yellow');
+          selected.range.deleteContents();
+          selected.range.insertNode(node);
+          this.optionsView = false;
+          this.referView = true;
+        }
+      },
+
+      link: function(e) {
+        this.referViewerPdf = null;
+        // var node = document.createElement('span');
+        // node.innerHTML = this.selectedText;
+        // node.setAttribute('class', 'hover');
+        // node.setAttribute('data-hover', JSON.stringify([this.$$('#external').value]));
+        // node.addEventListener('mouseover', this.hover);
+        // this.selectedRange.deleteContents();
+        // this.selectedRange.insertNode(node);
+        // rasterizeHTML.drawURL(this.$$('#external').value).then(function(val) {
+        //   this.referViewerImage = val;
+        //   console.log(val);
+        // }.bind(this));
+        PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
+          this.referViewerPdf = pdf;
+        }.bind(this)).catch(function(err){
+          console.log(err);
+        }.bind(this));
+        this.referViewer = true;
+      },
+
+      hover: function(e) {
+        console.log(e);
+      }
+    });
+  </script>
+</dom-module>

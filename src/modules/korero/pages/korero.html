@@ -1,0 +1,54 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+<link rel="import" href="../components/activity-panel.html">
+<link rel="import" href="../components/discussion-panel.html">
+
+<dom-module id="korero-interface">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .discussion-area {
+        min-width: 320px;
+      }
+
+      :host .video-area {
+        min-width: 320px;
+      }
+    </style>
+
+    <div class="horizontal layout fullbleed wrap">
+
+      <div class="flex-3 video-area">
+        <activity-panel
+          refer-viewer="{{referViewer}}"
+          refer-viewer-image="{{referViewerImage}}"
+          refer-viewer-pdf="{{referViewerPdf}}"></activity-panel>
+      </div>
+      <div class="flex discussion-area">
+        <discussion-panel
+          refer-viewer="{{referViewer}}"
+          refer-viewer-image="{{referViewerImage}}"
+          refer-viewer-pdf="{{referViewerPdf}}"></discussion-panel>
+      </div>
+
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'korero-interface',
+      properties: {
+        referViewer: {
+          type: Boolean,
+          value: false
+        },
+        referViewerImage: {
+          type: Object
+        },
+        referViewerPdf: {
+          type: Object
+        }
+      }
+    });
+  </script>
+</dom-module>

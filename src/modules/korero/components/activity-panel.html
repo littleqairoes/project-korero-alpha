@@ -1,0 +1,370 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../../../../bower_components/iron-icons/hardware-icons.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+<script src="../../../../bower_components/fabric.js/dist/fabric.js"></script>
+<script src="../../../../bower_components/chance/chance.js"></script>
+<script src="./rasterizeHTML.allinone.js"></script>
+
+
+<dom-module id="activity-panel">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .scrubber-area {
+        margin-left: 8px;
+        margin-right: 8px;
+        height: 5px;
+        background-color: #AAA;
+        position: relative;
+      }
+
+      :host #video-play-time {
+        height: 5px;
+        position: relative;
+        background-color: red;
+        width: 0px;
+      }
+
+      :host #video-content {
+        min-width: 320px;
+      }
+
+      :host .refer-viewer {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        background-color: #FFF;
+        overflow-y: auto;
+      }
+
+      :host .container{
+        position: relative;
+      }
+
+      :host #page-left-button {
+        position: absolute;
+        top: 300px;
+        left: 0px;
+      }
+
+      :host #page-right-button {
+        position: absolute;
+        top: 300px;
+        right: 0px;
+      }
+
+      :host #back-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    </style>
+    <div class="container" id="container-panel">
+      <div class="horizontal layout center">
+        <div class="flex">
+
+        </div>
+        <div class="flex-5" style="margin-top: 20px">
+          <google-youtube
+            width="100%"
+            id="video-content"
+            video-id="UieTvd7jU0E"
+            chromeless
+            on-google-youtube-ready="videoReady"
+            currenttime="{{videotime}}"
+            duration="{{videoduration}}"
+            currenttimeformatted="{{videoShowTime}}">
+          </google-youtube>
+
+          <div class="horizontal layout center">
+            <paper-icon-button
+              icon="av:play-circle-outline"
+              on-tap="play">
+            </paper-icon-button>
+            <paper-icon-button
+              icon="av:pause-circle-outline"
+              on-tap="pause">
+            </paper-icon-button>
+            <div
+              class="flex scrubber-area"
+              on-down="scrub"
+              on-track="scrub"
+              id="video-scrubber-area"
+            >
+              <div id="video-play-time"></div>
+            </div>
+            <div class="" style="margin: 8px; width: 50px; text-align: center">
+              {{videoShowTime}}
+            </div>
+          </div>
+        </div>
+
+        <div class="flex">
+
+        </div>
+
+        <!--<video width="100%" controls>-->
+        <!--  <source src="https://firebasestorage.googleapis.com/v0/b/schuyler-1.appspot.com/o/Video%20Material-%20Lecture%201%203%20%20Evaluating%20Designs%20--HCI-Professor%20Scott%20Klemmer.mp4?alt=media&token=5969fbd8-77f5-4d54-8648-affe7bf6dad8" type="video/mp4">-->
+        <!--  Your browser does not support the video tag.-->
+        <!--</video>-->
+      </div>
+      <template is="dom-if" if="{{referViewer}}">
+        <div class="refer-viewer" id="refer-viewer">
+          <canvas id="back-canvas" width="500px"></canvas>
+          <canvas id="canvas" width="500px"></canvas>
+          <paper-icon-button
+            id="page-left-button"
+            icon="hardware:keyboard-arrow-left"
+            on-tap="pageLeft">
+          </paper-icon-button>
+          <paper-icon-button
+            id="page-right-button"
+            icon="hardware:keyboard-arrow-right"
+            on-tap="pageRight">
+          </paper-icon-button>
+        </div>
+      </template>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'activity-panel',
+      properties: {
+        videotime: {
+          type: Number,
+          observer: "changeVideoTime"
+        },
+        videoShowTime: {
+          type: String
+        },
+        videoduration: {
+          type: Number
+        },
+        referViewer: {
+          type: Boolean,
+          notify: true,
+          observer: 'setReferViewer'
+        },
+        referViewerImage: {
+          type: Object,
+          observer: 'referViewerImageChanged'
+        },
+        referViewerPdf: {
+          type: Object,
+          observer: 'referViewerPdfChanged'
+        },
+        referViewerPdfPage: {
+          type: Number,
+          value: 1,
+          observer: 'referViewerPdfPageChanged'
+        }
+      },
+
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+
+      check: function(e) {
+        console.log(e)
+      },
+
+      referViewerPdfPageChanged: function(number) {
+        if (this.referViewerPdf) {
+          this.getPage(this.referViewerPdf, number);
+        }
+
+      },
+
+      referViewerPdfChanged: function(pdf) {
+        this.getPage(pdf, 1);
+      },
+
+      getPage: function(pdf, number) {
+        pdf.getPage(number).then(function(page) {
+          // you can now use *page* here
+          var viewport = page.getViewport(1);
+          var scale = (this.$$('#container-panel').getBoundingClientRect().width - 20 ) / viewport.width;
+          var scaledViewport = page.getViewport(scale);
+
+          var canvas = this.$$('#back-canvas');
+          var context = canvas.getContext('2d');
+          canvas.height = scaledViewport.height;
+          canvas.width = scaledViewport.width;
+          var renderContext = {
+            canvasContext: context,
+            viewport: scaledViewport
+          };
+
+          page.render(renderContext);
+          var img = canvas.toDataURL()
+
+          this.canvas.setHeight(scaledViewport.height);
+          this.canvas.setWidth(scaledViewport.width);
+
+          this.canvas.clear();
+          fabric.Image.fromURL(img, function(oImg) {
+            console.log(oImg)
+            if (oImg) {
+              this.canvas.add(oImg);
+            }
+
+            canvas.remove();
+            this.canvas.renderAll();
+          });
+
+          for (var i in this.boundingBoxes) {
+            if (this.boundingBoxes[i] && number === this.boundingBoxes[i].page) {
+              var rect2 = new fabric.Rect(this.boundingBoxes[i]);
+              this.canvas.add(rect2);
+              console.log(this.boundingBoxes[i]);
+            }
+          }
+        }.bind(this));
+      },
+
+      referViewerImageChanged: function(val) {
+        console.log(val);
+        var context = this.$$('#canvas').getContext("2d");
+        this.$$('#canvas').setAttribute('height', `${val.image.height}px`);
+        context.drawImage(val.image, 0, 0);
+      },
+
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+
+      setReferViewer: function(val) {
+        this.boundingBoxes = {};
+        if (val) {
+
+          setTimeout(function(){
+            console.log('hello there');
+            console.log(this.$$('#refer-viewer'))
+            this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+            this.canvas = new fabric.Canvas(this.$$('#canvas'));
+
+            this.canvas.on('mouse:down', function (option) {
+              console.log(option);
+              if (option.target) {
+                var target = option.target;
+                this.canvas.on('mouse:move', function (option) {
+                  this.boundingBoxes[target.id].top = target.top;
+                  this.boundingBoxes[target.id].left = target.left;
+                  this.boundingBoxes[target.id].height = target.height;
+                  this.boundingBoxes[target.id].width = target.width;
+                  console.log(this.boundingBoxes[target.id])
+                }.bind(this));
+
+              } else {
+                var startY = option.e.offsetY;
+                var startX = option.e.offsetX;
+
+                var id;
+
+                do {
+                  id = `${this.referViewerPdfPage}-${chance.string('abcdefghijklmnopqrstuvwxyz')}`;
+                } while (this.boundingBoxes[id]);
+
+                console.log(startX, startY);
+                var obj = {
+                  top : startY,
+                  left : startX,
+                  width : 0,
+                  height : 0,
+                  fill : 'transparent',
+                  stroke: 'red',
+                  strokewidth: 4,
+                  id: id,
+                  page: this.referViewerPdfPage
+                };
+                var rect2 = new fabric.Rect(obj);
+
+                this.boundingBoxes[id] = obj
+
+                this.canvas.add(rect2);
+
+                console.log("added");
+                this.canvas.on('mouse:move', function (option) {
+                  var e = option.e;
+                  this.boundingBoxes[id].width = e.offsetX - startX;
+                  this.boundingBoxes[id].height = e.offsetY - startY - 64
+                  rect2.set('width', this.boundingBoxes[id].width);
+                  rect2.set('height', this.boundingBoxes[id].height);
+                  rect2.setCoords();
+                }.bind(this));
+              }
+            }.bind(this));
+
+            this.canvas.on('mouse:up', function () {
+              this.canvas.off('mouse:move');
+            }.bind(this));
+          }.bind(this), 500)
+        }
+      },
+
+      pageRight: function() {
+        console.log('right');
+        var number = this.referViewerPdfPage + 1;
+        if (this.referViewerPdf && this.referViewerPdf.numPages >= number) {
+          this.referViewerPdfPage = number;
+        }
+        console.log(this.referViewerPdfPage);
+      },
+
+      pageLeft: function() {
+        console.log('left');
+        var number = this.referViewerPdfPage - 1;
+        if (number >= 0) {
+          this.referViewerPdfPage = number;
+        }
+        console.log(this.referViewerPdfPage);
+      },
+
+      _resize: function() {
+        var height = ((this.$$('#video-content').getBoundingClientRect().width * 9) / 16)
+        this.$$('#video-content').setAttribute('height', `${height}px`);
+        if (this.referViewer) {
+          this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+        }
+      },
+
+      play: function() {
+        this.$$('#video-content').play()
+      },
+
+      pause: function() {
+        this.$$('#video-content').pause()
+      },
+
+      scrub: function(e) {
+        var el = this.$$('#video-scrubber-area');
+        var elRect = el.getBoundingClientRect();
+        var scrubPos = (e.detail.x - elRect.left) / elRect.width
+        this.$$('#video-content').seekTo(this.videoduration != 1 ? this.videoduration * scrubPos : 0);
+        this.changeVideoTime(this.videoduration * scrubPos);
+      },
+
+      videoReady: function() {
+        //var el = this.$$('#video-scrubber-area');
+        this._resize();
+      },
+
+      changeVideoTime: function(time) {
+        console.log(time);
+        var elPlayTime = this.$$('#video-play-time');
+        elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
+      }
+
+      // http://stackoverflow.com/questions/18737058/how-to-remove-event-listener-from-fabricjs-canvas
+      // http://jsfiddle.net/rmFgX/5/
+    });
+  </script>
+</dom-module>

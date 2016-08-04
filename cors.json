@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://project-korero-polymer-tjmonsi1.c9users.io"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]
