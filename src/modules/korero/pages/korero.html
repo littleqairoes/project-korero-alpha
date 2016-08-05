@@ -20,15 +20,17 @@
 
       <div class="flex-3 video-area">
         <activity-panel
+          id="activity-panel"
           refer-viewer="{{referViewer}}"
-          refer-viewer-image="{{referViewerImage}}"
-          refer-viewer-pdf="{{referViewerPdf}}"></activity-panel>
+          on-save-activity="saveActivity"
+          on-cancel-activity="cancelActivity"></activity-panel>
       </div>
       <div class="flex discussion-area">
         <discussion-panel
+          id="discussion-panel"
           refer-viewer="{{referViewer}}"
-          refer-viewer-image="{{referViewerImage}}"
-          refer-viewer-pdf="{{referViewerPdf}}"></discussion-panel>
+          on-open-activity="openActivity"
+        ></discussion-panel>
       </div>
 
     </div>
@@ -48,6 +50,17 @@
         referViewerPdf: {
           type: Object
         }
+      },
+      openActivity: function(e) {
+        // console.log(e.detail);
+        this.$$('#activity-panel').openActivity(e.detail);
+      },
+      saveActivity: function(e) {
+        // console.log(e.detail)
+        this.$$('#discussion-panel').saveActivity(e.detail);
+      },
+      cancelActivity: function(e) {
+        this.$$('#discussion-panel').cancelLinking();
       }
     });
   </script>

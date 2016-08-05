@@ -2,6 +2,7 @@
 <link rel="import" href="../../../../bower_components/google-youtube/google-youtube.html">
 <link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../../../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../bower_components/iron-icons/hardware-icons.html">
 <link rel="import" href="../../../configs/behaviors/utils-behavior.html">
 <script src="../../../../bower_components/fabric.js/dist/fabric.js"></script>
@@ -31,7 +32,7 @@
         min-width: 320px;
       }
 
-      :host .refer-viewer {
+      :host .refer-activity {
         position: absolute;
         top: 0px;
         left: 0px;
@@ -54,6 +55,11 @@
         position: absolute;
         top: 300px;
         right: 0px;
+      }
+
+      :host .refer-activity-bottom-div {
+        position: fixed;
+        bottom: 0px;
       }
 
       :host #back-canvas {
@@ -111,8 +117,8 @@
         <!--  Your browser does not support the video tag.-->
         <!--</video>-->
       </div>
-      <template is="dom-if" if="{{referViewer}}">
-        <div class="refer-viewer" id="refer-viewer">
+      <template is="dom-if" if="{{referActivity}}">
+        <div class="refer-activity" id="refer-activity">
           <canvas id="back-canvas" width="500px"></canvas>
           <canvas id="canvas" width="500px"></canvas>
           <paper-icon-button
@@ -125,6 +131,20 @@
             icon="hardware:keyboard-arrow-right"
             on-tap="pageRight">
           </paper-icon-button>
+          <div class="refer-activity-bottom-div horizontal layout">
+            <div class="flex"></div>
+            <paper-icon-button
+              id="refer-activity-ok"
+              icon="icons:check"
+              on-tap="saveActivity"
+            ></paper-icon-button>
+            <paper-icon-button
+              id="refer-activity-cancel"
+              icon="icons:close"
+              on-tap="cancelActivity"
+            ></paper-icon-button>
+            <div class="flex"></div>
+          </div>
         </div>
       </template>
     </div>
@@ -143,10 +163,8 @@
         videoduration: {
           type: Number
         },
-        referViewer: {
+        referActivity: {
           type: Boolean,
-          notify: true,
-          observer: 'setReferViewer'
         },
         referViewerImage: {
           type: Object,
@@ -154,12 +172,18 @@
         },
         referViewerPdf: {
           type: Object,
-          observer: 'referViewerPdfChanged'
+          // observer: 'referViewerPdfChanged'
+        },
+        referViewerPdfName: {
+          type: String
         },
         referViewerPdfPage: {
           type: Number,
           value: 1,
           observer: 'referViewerPdfPageChanged'
+        },
+        boundingBoxes: {
+          type: Object
         }
       },
 
@@ -178,9 +202,9 @@
 
       },
 
-      referViewerPdfChanged: function(pdf) {
-        this.getPage(pdf, 1);
-      },
+      // referViewerPdfChanged: function(pdf) {
+      //   this.getPage(pdf, 1);
+      // },
 
       getPage: function(pdf, number) {
         pdf.getPage(number).then(function(page) {
@@ -203,17 +227,7 @@
 
           this.canvas.setHeight(scaledViewport.height);
           this.canvas.setWidth(scaledViewport.width);
-
           this.canvas.clear();
-          fabric.Image.fromURL(img, function(oImg) {
-            console.log(oImg)
-            if (oImg) {
-              this.canvas.add(oImg);
-            }
-
-            canvas.remove();
-            this.canvas.renderAll();
-          });
 
           for (var i in this.boundingBoxes) {
             if (this.boundingBoxes[i] && number === this.boundingBoxes[i].page) {
@@ -226,7 +240,6 @@
       },
 
       referViewerImageChanged: function(val) {
-        console.log(val);
         var context = this.$$('#canvas').getContext("2d");
         this.$$('#canvas').setAttribute('height', `${val.image.height}px`);
         context.drawImage(val.image, 0, 0);
@@ -241,18 +254,41 @@
         window.removeEventListener('resize', this._resize.bind(this))
       },
 
-      setReferViewer: function(val) {
+      cancelActivity: function() {
+        this.fire('cancel-activity', {}, {bubble: false});
+        this.closeActivity();
+      },
+
+      closeActivity: function() {
         this.boundingBoxes = {};
-        if (val) {
+        this.canvas.clear();
+        this.canvas.remove();
+        // var context = this.$$('#canvas').getContext("2d");
+        // context.clearRect(0, 0, this.$$('#canvas').width, this.$$('#canvas').height);
+        this.referActivity = false;
+      },
+
+      saveActivity: function() {
+        this.fire('save-activity', {
+          file: this.referViewerPdfName,
+          boxes: this.boundingBoxes
+        }, {bubble: false})
+        this.closeActivity();
+      },
+
+      openActivity: function(data) {
+        this.boundingBoxes = {};
+        this.referActivity = data.activity;
+        if (this.referActivity && data.pdf) {
+          this.referViewerPdfName = data.file;
           setTimeout(function(){
-            console.log('hello there');
-            console.log(this.$$('#refer-viewer'))
-            this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+            this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
             this.canvas = new fabric.Canvas(this.$$('#canvas'));
+            this.referViewerPdf = data.pdf;
+            this.getPage(this.referViewerPdf, 1);
             var targetMove = false;
-            var target
+            var target = null;
             this.canvas.on('mouse:down', function (option) {
-              console.log(option);
               if (option.target) {
                 target = option.target;
                 this.canvas.on('mouse:move', function (option) {
@@ -265,14 +301,11 @@
               } else {
                 var startY = option.e.offsetY;
                 var startX = option.e.offsetX;
-
                 var id;
-
                 do {
                   id = `${this.referViewerPdfPage}-${chance.string('abcdefghijklmnopqrstuvwxyz')}`;
                 } while (this.boundingBoxes[id]);
 
-                console.log(startX, startY);
                 var obj = {
                   top : startY,
                   left : startX,
@@ -284,13 +317,10 @@
                   id: id,
                   page: this.referViewerPdfPage
                 };
+
                 var rect2 = new fabric.Rect(obj);
-
                 this.boundingBoxes[id] = obj
-
                 this.canvas.add(rect2);
-
-                console.log("added");
                 this.canvas.on('mouse:move', function (option) {
                   var e = option.e;
                   this.boundingBoxes[id].width = e.offsetX - startX;
@@ -300,21 +330,100 @@
                   rect2.setCoords();
                 }.bind(this));
               }
-            }.bind(this));
 
-            this.canvas.on('mouse:up', function (option) {
+              this.canvas.on('mouse:up', function (option) {
               this.canvas.off('mouse:move');
-              if (!targetMove) {
-                delete(this.boundingBoxes[target.id]);
-                console.log(this.boundingBoxes)
-                target.remove();
-              }
-              target = null;
-              targetMove = false;
-            }.bind(this));
+                if (!targetMove && target) {
+                  delete(this.boundingBoxes[target.id]);
+                  target.remove();
+                }
+                target = null;
+                targetMove = false;
+                for (var i in this.boundingBoxes) {
+                  console.log(this.boundingBoxes[i]);
+                }
+              }.bind(this));
+            }.bind(this))
           }.bind(this), 500)
         }
       },
+
+      // setReferViewer: function(val) {
+      //   this.boundingBoxes = {};
+      //   if (val) {
+      //     setTimeout(function(){
+      //       console.log('hello there');
+      //       console.log(this.$$('#refer-viewer'))
+      //       this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+      //       this.canvas = new fabric.Canvas(this.$$('#canvas'));
+      //       var targetMove = false;
+      //       var target
+      //       this.canvas.on('mouse:down', function (option) {
+      //         console.log(option);
+      //         if (option.target) {
+      //           target = option.target;
+      //           this.canvas.on('mouse:move', function (option) {
+      //             this.boundingBoxes[target.id].top = target.top;
+      //             this.boundingBoxes[target.id].left = target.left;
+      //             this.boundingBoxes[target.id].height = target.height;
+      //             this.boundingBoxes[target.id].width = target.width;
+      //             targetMove = true;
+      //           }.bind(this));
+      //         } else {
+      //           var startY = option.e.offsetY;
+      //           var startX = option.e.offsetX;
+
+      //           var id;
+
+      //           do {
+      //             id = `${this.referViewerPdfPage}-${chance.string('abcdefghijklmnopqrstuvwxyz')}`;
+      //           } while (this.boundingBoxes[id]);
+
+      //           console.log(startX, startY);
+      //           var obj = {
+      //             top : startY,
+      //             left : startX,
+      //             width : 0,
+      //             height : 0,
+      //             fill : 'transparent',
+      //             stroke: 'red',
+      //             strokewidth: 4,
+      //             id: id,
+      //             page: this.referViewerPdfPage
+      //           };
+      //           var rect2 = new fabric.Rect(obj);
+
+      //           this.boundingBoxes[id] = obj
+
+      //           this.canvas.add(rect2);
+
+      //           console.log("added");
+      //           this.canvas.on('mouse:move', function (option) {
+      //             var e = option.e;
+      //             this.boundingBoxes[id].width = e.offsetX - startX;
+      //             this.boundingBoxes[id].height = e.offsetY - startY - 64
+      //             rect2.set('width', this.boundingBoxes[id].width);
+      //             rect2.set('height', this.boundingBoxes[id].height);
+      //             rect2.setCoords();
+      //           }.bind(this));
+      //         }
+      //       }.bind(this));
+
+      //       this.canvas.on('mouse:up', function (option) {
+      //         this.canvas.off('mouse:move');
+      //         if (!targetMove && target) {
+      //           delete(this.boundingBoxes[target.id]);
+      //           target.remove();
+      //         }
+      //         target = null;
+      //         targetMove = false;
+      //         for (var i in this.boundingBoxes) {
+      //           console.log(this.boundingBoxes[i]);
+      //         }
+      //       }.bind(this));
+      //     }.bind(this), 500)
+      //   }
+      // },
 
       pageRight: function() {
         console.log('right');
@@ -337,8 +446,8 @@
       _resize: function() {
         var height = ((this.$$('#video-content').getBoundingClientRect().width * 9) / 16)
         this.$$('#video-content').setAttribute('height', `${height}px`);
-        if (this.referViewer) {
-          this.$$('#refer-viewer').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+        if (this.referActivity) {
+          this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
         }
       },
 
