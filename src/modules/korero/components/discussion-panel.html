@@ -105,6 +105,11 @@
         icon="icons:add"
         on-tap="createDiscussionAction">
       </paper-fab>
+      <template is="dom-if" is="{{openBottom}}">
+        <paper-material class="bottomLinks">
+
+        </paper-material>
+      </template>
       <paper-tooltip for="create-discussion-button" position="left" animation-delay="0">Add Discussion</paper-tooltip>
     </div>
   </template>
@@ -153,6 +158,10 @@
         referViewerPdf: {
           type: Object,
           notify: true
+        },
+        openBottom: {
+          type: Boolean,
+          value: false
         }
       },
 
