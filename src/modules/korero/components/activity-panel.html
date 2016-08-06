@@ -119,8 +119,8 @@
       </div>
       <template is="dom-if" if="{{referActivity}}">
         <div class="refer-activity" id="refer-activity">
-          <canvas id="back-canvas" width="500px"></canvas>
-          <canvas id="canvas" width="500px"></canvas>
+          <!--<canvas id="back-canvas" width="500px"></canvas>-->
+          <!--<canvas id="canvas" width="500px"></canvas>-->
           <paper-icon-button
             id="page-left-button"
             icon="hardware:keyboard-arrow-left"
@@ -199,7 +199,6 @@
         if (this.referViewerPdf) {
           this.getPage(this.referViewerPdf, number);
         }
-
       },
 
       // referViewerPdfChanged: function(pdf) {
@@ -223,7 +222,7 @@
           };
 
           page.render(renderContext);
-          var img = canvas.toDataURL()
+          // var img = canvas.toDataURL()
 
           this.canvas.setHeight(scaledViewport.height);
           this.canvas.setWidth(scaledViewport.width);
@@ -262,9 +261,17 @@
       closeActivity: function() {
         this.boundingBoxes = {};
         this.canvas.clear();
-        this.canvas.remove();
-        // var context = this.$$('#canvas').getContext("2d");
-        // context.clearRect(0, 0, this.$$('#canvas').width, this.$$('#canvas').height);
+        // this.canvas.off('mouse:down');
+        // this.canvas.off('mouse:up');
+        // this.canvas.off('mouse:move');
+        this.canvas.removeListeners();
+        // this.canvas = null;
+        // this.canvas.remove();
+        var context = this.$$('#back-canvas').getContext("2d");
+        context.clearRect(0, 0, this.$$('#back-canvas').width, this.$$('#back-canvas').height);
+
+        Polymer.dom(this.$$('#refer-activity')).removeChild(this.$$('#back-canvas'));
+        Polymer.dom(this.$$('#refer-activity')).removeChild(this.$$('.canvas-container'));
         this.referActivity = false;
       },
 
@@ -277,74 +284,98 @@
       },
 
       openActivity: function(data) {
+        console.log('open-activity');
+        var backCanvas = document.createElement('canvas');
+        backCanvas.setAttribute('id', 'back-canvas');
+        backCanvas.setAttribute('width', '500px');
+        var canvas = document.createElement('canvas');
+        canvas.setAttribute('id', 'canvas');
+        canvas.setAttribute('width', '500px');
+
         this.boundingBoxes = {};
         this.referActivity = data.activity;
         if (this.referActivity && data.pdf) {
+          Polymer.dom(this.$$('#refer-activity')).insertBefore(backCanvas, this.$$('#page-left-button'))
+          Polymer.dom(this.$$('#refer-activity')).insertBefore(canvas, this.$$('#page-left-button'))
           this.referViewerPdfName = data.file;
-          setTimeout(function(){
-            this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
-            this.canvas = new fabric.Canvas(this.$$('#canvas'));
-            this.referViewerPdf = data.pdf;
-            this.getPage(this.referViewerPdf, 1);
-            var targetMove = false;
-            var target = null;
-            this.canvas.on('mouse:down', function (option) {
-              if (option.target) {
-                target = option.target;
-                this.canvas.on('mouse:move', function (option) {
-                  this.boundingBoxes[target.id].top = target.top;
-                  this.boundingBoxes[target.id].left = target.left;
-                  this.boundingBoxes[target.id].height = target.height;
-                  this.boundingBoxes[target.id].width = target.width;
-                  targetMove = true;
-                }.bind(this));
-              } else {
-                var startY = option.e.offsetY;
-                var startX = option.e.offsetX;
-                var id;
-                do {
-                  id = `${this.referViewerPdfPage}-${chance.string('abcdefghijklmnopqrstuvwxyz')}`;
-                } while (this.boundingBoxes[id]);
-
-                var obj = {
-                  top : startY,
-                  left : startX,
-                  width : 0,
-                  height : 0,
-                  fill : 'transparent',
-                  stroke: 'red',
-                  strokewidth: 4,
-                  id: id,
-                  page: this.referViewerPdfPage
-                };
-
-                var rect2 = new fabric.Rect(obj);
-                this.boundingBoxes[id] = obj
-                this.canvas.add(rect2);
-                this.canvas.on('mouse:move', function (option) {
-                  var e = option.e;
-                  this.boundingBoxes[id].width = e.offsetX - startX;
-                  this.boundingBoxes[id].height = e.offsetY - startY - 64
-                  rect2.set('width', this.boundingBoxes[id].width);
-                  rect2.set('height', this.boundingBoxes[id].height);
-                  rect2.setCoords();
-                }.bind(this));
-              }
-
-              this.canvas.on('mouse:up', function (option) {
-              this.canvas.off('mouse:move');
-                if (!targetMove && target) {
-                  delete(this.boundingBoxes[target.id]);
-                  target.remove();
-                }
-                target = null;
-                targetMove = false;
-                for (var i in this.boundingBoxes) {
-                  console.log(this.boundingBoxes[i]);
-                }
+          // setTimeout(function(){
+          this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+          this.canvas = new fabric.Canvas(this.$$('#canvas'));
+          this.referViewerPdf = data.pdf;
+          this.getPage(this.referViewerPdf, 1);
+          console.log(this.canvas)
+          // console.log(this.canvas.on)
+          var targetMove = false;
+          var target = null;
+          this.canvas.on('mouse:down', function (option) {
+            if (option.target) {
+              target = option.target;
+              this.canvas.on('mouse:move', function (option) {
+                this.boundingBoxes[target.id].top = target.top;
+                this.boundingBoxes[target.id].left = target.left;
+                this.boundingBoxes[target.id].height = target.height;
+                this.boundingBoxes[target.id].width = target.width;
+                var canvas = this.$$('#back-canvas');
+                this.boundingBoxes[id].thumbnail = canvas.toDataURL();
+                targetMove = true;
               }.bind(this));
-            }.bind(this))
-          }.bind(this), 500)
+            } else {
+              var startY = option.e.offsetY;
+              var startX = option.e.offsetX;
+              var id;
+              do {
+                id = `${this.referViewerPdfPage}-${chance.string({pool: 'abcdefghijklmnopqrstuvwxyz'})}`;
+              } while (this.boundingBoxes[id]);
+
+              var obj = {
+                top : startY,
+                left : startX,
+                width : 0,
+                height : 0,
+                fill : 'transparent',
+                stroke: 'red',
+                strokewidth: 4,
+                id: id,
+                page: this.referViewerPdfPage
+              };
+
+              var rect2 = new fabric.Rect(obj);
+              this.boundingBoxes[id] = obj
+              this.canvas.add(rect2);
+
+
+
+              this.canvas.on('mouse:move', function (option) {
+                var e = option.e;
+                console.log(e);
+                this.boundingBoxes[id].width = e.offsetX - startX;
+                this.boundingBoxes[id].height = e.offsetY - startY - 64
+                rect2.set('width', this.boundingBoxes[id].width);
+                rect2.set('height', this.boundingBoxes[id].height);
+                rect2.setCoords();
+                var canvas = this.$$('#back-canvas');
+                this.boundingBoxes[id].thumbnail = canvas.toDataURL();
+              }.bind(this));
+
+              console.log(this.canvas);
+            }
+
+            console.log(this.canvas);
+
+            this.canvas.on('mouse:up', function (option) {
+              this.canvas.off('mouse:move');
+              if (!targetMove && target) {
+                delete(this.boundingBoxes[target.id]);
+                target.remove();
+              }
+              target = null;
+              targetMove = false;
+              for (var i in this.boundingBoxes) {
+                console.log(this.boundingBoxes[i]);
+              }
+            }.bind(this));
+          }.bind(this))
+          // }.bind(this), 500)
         }
       },
 
