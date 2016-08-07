@@ -41,6 +41,15 @@
         overflow-y: auto;
       }
 
+      :host .hover-activity {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        background-color: #FFF;
+        overflow-y: auto;
+      }
+
       :host .container{
         position: relative;
       }
@@ -117,6 +126,11 @@
         <!--  Your browser does not support the video tag.-->
         <!--</video>-->
       </div>
+      <template is="dom-if" if="{{hoverActivity}}">
+        <div class="hover-activity" id="hover-activity">
+          <canvas id="hover-canvas" width="500px"></canvas>
+        </div>
+      </template>
       <template is="dom-if" if="{{referActivity}}">
         <div class="refer-activity" id="refer-activity">
           <!--<canvas id="back-canvas" width="500px"></canvas>-->
@@ -260,38 +274,45 @@
 
       closeActivity: function() {
         this.boundingBoxes = {};
-        this.canvas.clear();
-        // this.canvas.off('mouse:down');
-        // this.canvas.off('mouse:up');
-        // this.canvas.off('mouse:move');
-        this.canvas.removeListeners();
-        // this.canvas = null;
-        // this.canvas.remove();
-        var context = this.$$('#back-canvas').getContext("2d");
-        context.clearRect(0, 0, this.$$('#back-canvas').width, this.$$('#back-canvas').height);
-
         Polymer.dom(this.$$('#refer-activity')).removeChild(this.$$('#back-canvas'));
         Polymer.dom(this.$$('#refer-activity')).removeChild(this.$$('.canvas-container'));
         this.referActivity = false;
       },
 
       saveActivity: function() {
-        this.fire('save-activity', {
-          file: this.referViewerPdfName,
-          boxes: this.boundingBoxes
-        }, {bubble: false})
+        var obj = {
+          file: this.referViewerPdfName
+        };
+
+        for (var i in this.boundingBoxes) {
+          if (this.boundingBoxes[i]) {
+            obj.boxes = this.boundingBoxes;
+            break;
+          }
+        }
+
+        if (!obj.boxes) {
+          var canvas = this.$$('#back-canvas');
+          obj.boxes = {
+            root: {
+              id: 'root',
+              page: 1,
+              thumbnail: canvas.toDataURL()
+            }
+          }
+        }
+
+        this.fire('save-activity', obj, {bubble: false})
         this.closeActivity();
       },
 
       openActivity: function(data) {
-        console.log('open-activity');
         var backCanvas = document.createElement('canvas');
         backCanvas.setAttribute('id', 'back-canvas');
         backCanvas.setAttribute('width', '500px');
         var canvas = document.createElement('canvas');
         canvas.setAttribute('id', 'canvas');
         canvas.setAttribute('width', '500px');
-
         this.boundingBoxes = {};
         this.referActivity = data.activity;
         if (this.referActivity && data.pdf) {
@@ -303,8 +324,6 @@
           this.canvas = new fabric.Canvas(this.$$('#canvas'));
           this.referViewerPdf = data.pdf;
           this.getPage(this.referViewerPdf, 1);
-          console.log(this.canvas)
-          // console.log(this.canvas.on)
           var targetMove = false;
           var target = null;
           this.canvas.on('mouse:down', function (option) {
@@ -343,11 +362,8 @@
               this.boundingBoxes[id] = obj
               this.canvas.add(rect2);
 
-
-
               this.canvas.on('mouse:move', function (option) {
                 var e = option.e;
-                console.log(e);
                 this.boundingBoxes[id].width = e.offsetX - startX;
                 this.boundingBoxes[id].height = e.offsetY - startY - 64
                 rect2.set('width', this.boundingBoxes[id].width);
@@ -356,11 +372,7 @@
                 var canvas = this.$$('#back-canvas');
                 this.boundingBoxes[id].thumbnail = canvas.toDataURL();
               }.bind(this));
-
-              console.log(this.canvas);
             }
-
-            console.log(this.canvas);
 
             this.canvas.on('mouse:up', function (option) {
               this.canvas.off('mouse:move');
@@ -370,9 +382,9 @@
               }
               target = null;
               targetMove = false;
-              for (var i in this.boundingBoxes) {
-                console.log(this.boundingBoxes[i]);
-              }
+              // for (var i in this.boundingBoxes) {
+              //   console.log(this.boundingBoxes[i]);
+              // }
             }.bind(this));
           }.bind(this))
           // }.bind(this), 500)
@@ -380,21 +392,17 @@
       },
 
       pageRight: function() {
-        console.log('right');
         var number = this.referViewerPdfPage + 1;
         if (this.referViewerPdf && this.referViewerPdf.numPages >= number) {
           this.referViewerPdfPage = number;
         }
-        console.log(this.referViewerPdfPage);
       },
 
       pageLeft: function() {
-        console.log('left');
         var number = this.referViewerPdfPage - 1;
         if (number >= 0) {
           this.referViewerPdfPage = number;
         }
-        console.log(this.referViewerPdfPage);
       },
 
       _resize: function() {
@@ -403,6 +411,42 @@
         if (this.referActivity) {
           this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
         }
+        if (this.hoverActivity) {
+          this.$$('#hover-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+        }
+      },
+
+      openHoverActivity: function(image, box) {
+        this.hoverActivity = true;
+        setTimeout(function(){
+          var canvas = this.$$('#hover-canvas');
+          var context = canvas.getContext('2d');
+          var imageObj = new Image();
+          imageObj.onload = function() {
+
+            canvas.height = this.height;
+            canvas.width = this.width;
+            context.drawImage(this, 0, 0);
+
+            if (box) {
+              context.beginPath();
+              context.lineWidth="6=4";
+              context.strokeStyle="red";
+              context.rect(box.left, box.top, box.width, box.height);
+              context.stroke();
+            }
+
+          };
+
+          imageObj.src = image;
+        }.bind(this), 100)
+      },
+
+      closeHoverActivity: function() {
+        var canvas = this.$$('#hover-canvas');
+        var context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        this.hoverActivity = false;
       },
 
       play: function() {

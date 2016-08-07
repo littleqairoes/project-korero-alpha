@@ -44,7 +44,7 @@
         if (selected) {
           selectedText = selected.toString();
           node = selected.anchorNode;
-          console.log(selected.rangeCount);
+
           if (selected.rangeCount > 0) {
             range = selected.getRangeAt(0);
             pos = range.getBoundingClientRect();
@@ -62,12 +62,6 @@
       },
 
       showSelection: function(textComponent) {
-        //var textComponent = document.getElementById('Editor');
-
-        // console.log(textComponent.)
-        // var x = window.getSelection();
-        // console.log(x.toString());
-        // console.log(window.getSelection());
         var selectedText;
         var startPos = 0;
         var endPos = 0;

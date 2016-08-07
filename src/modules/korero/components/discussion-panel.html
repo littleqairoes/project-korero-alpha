@@ -67,14 +67,14 @@
 
       :host .bottom-links {
         background-color: #FFF;
-        position: absolute;
+        position: fixed;
         bottom: 0px;
+        width: 300px;
         right: 0px;
-        left: 0px;
       }
 
       :host .bottom-links .container {
-        width: 100%;
+        overflow-y: auto;
       }
 
       :host .bottom-tile {
@@ -85,7 +85,6 @@
       :host .bottom-tile img {
         height: 150px;
         border: 1px solid black;
-
       }
     </style>
 
@@ -150,12 +149,25 @@
                   on-tap="clickThumbnail"
                   data-id$="[[bottomTile.id]]"
                   data-filename$="[[item.file]]"
+                  data-top$="[[bottomTile.top]]"
+                  data-left$="[[bottomTile.left]]"
+                  data-width$="[[bottomTile.width]]"
+                  data-height$="[[bottomTile.height]]"
                 >
               </div>
             </template>
           </template>
         </div>
-
+        <div class="horizontal layout">
+          <paper-button class="flex" on-tap="exitBottom">
+            Exit
+          </paper-button>
+          <template is="dom-if" if="{{createNode}}">
+            <paper-button class="flex" on-tap="openHoverOptions">
+              Refer more...
+            </paper-button>
+          </template>
+        </div>
       </paper-material>
     </template>
   </template>
@@ -220,16 +232,16 @@
 
       attached: function() {
         this._resize();
-        window.addEventListener('resize', this._resize.bind(this))
+        window.addEventListener('resize', this._resize.bind(this));
       },
 
       detached: function() {
-        window.removeEventListener('resize', this._resize.bind(this))
+        window.removeEventListener('resize', this._resize.bind(this));
       },
 
       _resize: function() {
         var height = this.windowSize().height;
-        this.$$('#discussion-panel-content').setAttribute('style', `height: ${height - 64}px`)
+        this.$$('#discussion-panel-content').setAttribute('style', `height: ${height - 64}px`);
       },
 
       createDiscussionAction: function() {
@@ -238,7 +250,7 @@
           title: '',
           text: '',
           links: {}
-        }
+        };
       },
 
       closeCreateDiscussionAction: function() {
@@ -253,17 +265,19 @@
         this.optionsView = true;
         this.referView = false;
         this.openHoverOptions();
+
       },
 
       openHoverOptions: function() {
         if (this.selected.text && this.selected.text.length > 0) {
+          this.openBottom = null;
           var elRect = this.$$('#create-discussion-container').getBoundingClientRect();
           var top = (this.selected.pos.top - elRect.top) + this.selected.pos.height;
           var left = (this.selected.pos.left) - elRect.left;
 
           this.$$('#option-hover').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`);
         } else {
-          this.$$('#option-hover').setAttribute('style', `display: none`)
+          this.$$('#option-hover').setAttribute('style', `display: none`);
         }
       },
 
@@ -273,7 +287,7 @@
           node.innerHTML = this.selected.text;
           this.selected.range.deleteContents();
           this.selected.range.insertNode(node);
-          this.$$('#option-hover').setAttribute('style', `display: none`)
+          this.$$('#option-hover').setAttribute('style', `display: none`);
         }
       },
 
@@ -283,7 +297,7 @@
           node.innerHTML = this.selected.text;
           this.selected.range.deleteContents();
           this.selected.range.insertNode(node);
-          this.$$('#option-hover').setAttribute('style', `display: none`)
+          this.$$('#option-hover').setAttribute('style', `display: none`);
         }
       },
 
@@ -292,6 +306,9 @@
           this.createNode = document.createElement('span');
           this.createNode.innerHTML = this.selected.text;
           this.createNode.setAttribute('style', 'background-color: yellow');
+          var id = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 10});
+          this.createNode.setAttribute('refer-id', id)
+          this.newDiscussion.links[id] = {};
           this.selected.range.deleteContents();
           this.selected.range.insertNode(this.createNode);
           this.optionsView = false;
@@ -312,11 +329,11 @@
         // this.selectedRange.insertNode(node);
         // rasterizeHTML.drawURL(this.$$('#external').value).then(function(val) {
         //   this.referViewerImage = val;
-        //   console.log(val);
         // }.bind(this));
         // this
         PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
           this.fire('open-activity', {pdf: pdf, file: this.$$('#external').value, activity: true}, {bubble: false});
+          this.$$('#external').value = '';
           this.$$('#option-hover').setAttribute('style', `display: none`)
         }.bind(this)).catch(function(err){
           console.log(err);
@@ -333,29 +350,35 @@
       },
 
       checkNodeForCancel: function() {
-        var data = JSON.parse(this.createNode.getAttribute('data-hover'));
-        if (!data || (data && (!data.length || data.length === 0 ))) {
-          this.selected.range.deleteContents();
-          this.selected.range.insertNode(document.createTextNode(this.createNode.innerHTML));
-          this.selected = null;
-          this.createNode = null;
+        if (this.createNode) {
+          var data = JSON.parse(this.createNode.getAttribute('data-hover'));
+          if (!data || (data && (!data.length || data.length === 0 ))) {
+            this.selected.range.deleteContents();
+            this.selected.range.insertNode(document.createTextNode(this.createNode.innerHTML));
+            this.selected = null;
+            this.createNode = null;
+          } else {
+            this.exitBottom();
+          }
         }
+
       },
 
       saveActivity: function(data) {
         var array = JSON.parse(this.createNode.getAttribute('data-hover'));
+        var nodeId = this.createNode.getAttribute('refer-id')
         var id = null;
         do {
           id = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz'});
-        } while (this.newDiscussion[id]);
-        this.newDiscussion.links[id] = data;
+        } while (this.newDiscussion.links[nodeId][id]);
+        this.newDiscussion.links[nodeId][id] = data;
+        console.log(data);
         array.push(id);
 
         this.createNode.setAttribute('data-hover', JSON.stringify(array));
-        this.openBottom = []
-        for (var i in this.newDiscussion.links) {
-          this.push('openBottom', this.newDiscussion.links[i]);
-          // console.log(this.openBottom);
+        this.openBottom = [];
+        for (var i in this.newDiscussion.links[nodeId]) {
+          this.push('openBottom', this.newDiscussion.links[nodeId][i]);
         }
         // finish this
       },
@@ -371,22 +394,75 @@
       },
 
       hoverThumbnail: function(e) {
-        // console.log(e.target)
-        // console.log(e.target.getAttribute('filename'))
+        console.log(e.target);
+        var top = e.target.getAttribute('data-top');
+        var left = e.target.getAttribute('data-left');
+        var width = e.target.getAttribute('data-width');
+        var height = e.target.getAttribute('data-height');
+        var box = null;
+
+        if (top && left && width && height) {
+          box = {top: top, left: left, width: width, height: height};
+        }
+        this.fire('hover-activity',
+          {image: e.target.src, box: box},
+          {bubble: false});
       },
 
       hoverOutThumbnail: function(e) {
-        // console.log(e, 'hoverout')
+        this.fire('hover-out-activity', {}, {bubble: false});
       },
 
       clickThumbnail: function(e) {
-        // console.log(e, 'click')
       },
 
-      checkOpenBottom: function(data) {
-        console.log(data)
-        console.log(this.openBottom)
-        return data && data.length;
+      exitBottom: function() {
+        this.openBottom = null;
+        if (this.createNode) {
+          this.createNode.setAttribute('style', 'text-decoration: underline; font-weight: bold; cursor: pointer');
+          this.createNode.addEventListener('mouseover', this.hoverLink.bind(this));
+          this.createNode.addEventListener('mouseout', this.hoverOutLink.bind(this));
+          this.createNode.addEventListener('tap', this.clickLink.bind(this));
+          this.createNode = null;
+        }
+      },
+
+      hoverLink: function(e) {
+        this.openThisBottom(e);
+        this.clickedTheLink = false;
+      },
+
+      openThisBottom: function(e) {
+        var array = JSON.parse(e.target.getAttribute('data-hover'));
+        var nodeId = e.target.getAttribute('refer-id');
+        var id = e.target.getAttribute('discussion-id');
+        console.log(nodeId)
+        var obj
+        if (!id) {
+          obj = this.newDiscussion.links[nodeId]
+        } else {
+          obj = this.discussions[id].links[nodeId]
+        }
+
+        if (obj) {
+          this.openBottom = []
+          for (var i in obj) {
+            this.push('openBottom', obj[i]);
+          }
+        } else {
+          console.log('error no discussion')
+        }
+      },
+
+      hoverOutLink: function(e) {
+        if (!this.clickedTheLink) {
+          this.openBottom = null;
+        }
+      },
+
+      clickLink: function(e) {
+        this.openThisBottom(e);
+        this.clickedTheLink = true;
       }
     });
   </script>

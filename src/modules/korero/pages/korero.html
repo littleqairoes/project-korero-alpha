@@ -16,6 +16,13 @@
       }
     </style>
 
+    <app-route
+      route="{{moduleRoute}}"
+      pattern="/:videoid"
+      data="{{moduleData}}"
+      tail="{{subroute}}">
+    </app-route>
+
     <div class="horizontal layout fullbleed wrap">
 
       <div class="flex-3 video-area">
@@ -30,6 +37,9 @@
           id="discussion-panel"
           refer-viewer="{{referViewer}}"
           on-open-activity="openActivity"
+          on-hover-activity="hoverActivity"
+          on-hover-out-activity="hoverOutActivity"
+          on-click-activity="viewActivity"
         ></discussion-panel>
       </div>
 
@@ -61,6 +71,12 @@
       },
       cancelActivity: function(e) {
         this.$$('#discussion-panel').cancelLinking();
+      },
+      hoverActivity: function(e) {
+        this.$$('#activity-panel').openHoverActivity(e.detail.image, e.detail.box)
+      },
+      hoverOutActivity: function(e) {
+        this.$$('#activity-panel').closeHoverActivity();
       }
     });
   </script>
