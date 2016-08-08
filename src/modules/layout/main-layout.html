@@ -131,7 +131,6 @@
           </app-toolbar>
         </app-header>
 
-
         <neon-animated-pages
           role="main"
           selected="[[page]]"
@@ -206,8 +205,8 @@
       },
 
       signIn() {
-        this.$.auth.signInWithPopup().then(function(result) {
-          this.$.toaster.show(`Welcome ${result.user.displayName}!`);
+        this.$.auth.signInAnonymously().then(function(result) {
+          this.$.toaster.show(`Welcome User!`);
         }.bind(this)).catch(this._catchError.bind(this));
       },
 
@@ -220,6 +219,10 @@
           this.$.toaster.show('You are already logged out.');
         }
       },
+
+      _catchError: function(err) {
+        this.$.toaster.show(err.message);
+      }
 
     });
   </script>

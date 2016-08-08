@@ -3,6 +3,7 @@
 <link rel="import" href="../../configs/behaviors/module-behavior.html">
 <link rel="import" href="../layout/main-layout.html">
 <link rel="import" href="pages/korero.html">
+<link rel="import" href="pages/korero-viewer.html">
 
 <dom-module id="korero-with-layout">
   <template>
@@ -26,8 +27,10 @@
       module-name="[[moduleName]]"
       page="[[page]]"
       app-title="Korero"
+      user="{{user}}"
       >
-      <korero-interface name="korero" route="[[subroute]]"></korero-interface>
+      <!--<korero-interface name="korero" route="[[subroute]]"></korero-interface>-->
+      <korero-viewer name="korero" route="[[subroute]]" user="{{user}}"></korero-viewer>
     </main-layout>
     <!-- Put template ends here -->
 

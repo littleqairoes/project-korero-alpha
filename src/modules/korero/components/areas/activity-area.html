@@ -1,0 +1,100 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../blocks/video-block.html">
+<link rel="import" href="../blocks/edit-document-block.html">
+<link rel="import" href="../blocks/hover-document-block.html">
+
+<dom-module id="activity-area">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host {
+        width: inherit;
+      }
+      :host #edit-document-block {
+        position: absolute;
+        top: 0;
+      }
+
+      :host #hover-document-block {
+        position: absolute;
+        top: 0;
+      }
+      :host #container-panel {
+        position: relative;
+      }
+    </style>
+    <div class="container" id="container-panel">
+      <div class="horizontal layout center">
+        <div class="flex">
+        </div>
+        <div class="flex-5" style="margin-top: 20px">
+          <video-block
+            videoid="[[videoid]]"
+          ></video-block>
+        </div>
+        <div class="flex">
+        </div>
+      </div>
+      <template is="dom-if" if="{{viewHoverActivity}}">
+        <hover-document-block id="hover-document-block"></hover-document-block>
+      </template>
+      <template is="dom-if" if="{{viewEditActivity}}">
+        <edit-document-block
+          id="edit-document-block"
+          on-cancel-edit-activity="_cancelEditActivity"
+          on-save-edit-activity="_saveEditActivity">
+        </edit-document-block>
+      </template>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'activity-area',
+      properties: {
+        videoid: {
+          type: String
+        },
+        viewEditActivity: {
+          type: Boolean,
+          value: false
+        },
+        viewHoverActivity: {
+          type: Boolean,
+          value: false
+        }
+      },
+      openEditActivity: function() {
+        this.viewEditActivity = true
+      },
+      editActivity: function(data) {
+        this.$$('#edit-document-block').setDocument(data);
+      },
+      hoverActivity: function(data) {
+        this.viewHoverActivity = true;
+        setTimeout(function(){
+          this.$$('#hover-document-block').setDocument(data);
+        }.bind(this), 100);
+      },
+      closeHoverActivity: function() {
+        this.$$('#hover-document-block').closeHover();
+        this.viewHoverActivity = false;
+      },
+      closeEditActivity: function() {
+        if (this.$$('#edit-document-block')) {
+          this.$$('#edit-document-block').cancelActivity();
+        }
+      },
+      _cancelEditActivity: function() {
+        this.fire('cancel-edit-activity', {}, {bubble: false});
+        this.viewEditActivity = false;
+      },
+      _saveEditActivity: function(e) {
+        if (e.model) {
+          this.fire('save-edit-activity', e.detail, {bubble: false});
+          this.viewEditActivity = false;
+        }
+      }
+    })
+  </script>
+</dom-module>

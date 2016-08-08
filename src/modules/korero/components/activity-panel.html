@@ -50,6 +50,15 @@
         overflow-y: auto;
       }
 
+      :host .view-activity {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 100%;
+        background-color: #FFF;
+        overflow-y: auto;
+      }
+
       :host .container{
         position: relative;
       }
@@ -61,6 +70,18 @@
       }
 
       :host #page-right-button {
+        position: absolute;
+        top: 300px;
+        right: 0px;
+      }
+
+      :host #page-left-button-view {
+        position: absolute;
+        top: 300px;
+        left: 0px;
+      }
+
+      :host #page-right-button-view {
         position: absolute;
         top: 300px;
         right: 0px;
@@ -131,6 +152,21 @@
           <canvas id="hover-canvas" width="500px"></canvas>
         </div>
       </template>
+      <template is="dom-if" if="{{viewActivity}}">
+        <div class="view-activity" id="view-activity">
+          <canvas id="view-canvas" width="500px"></canvas>
+          <paper-icon-button
+            id="page-left-button-view"
+            icon="hardware:keyboard-arrow-left"
+            on-tap="viewPageLeft">
+          </paper-icon-button>
+          <paper-icon-button
+            id="page-right-button-view"
+            icon="hardware:keyboard-arrow-right"
+            on-tap="viewPageRight">
+          </paper-icon-button>
+        </div>
+      </template>
       <template is="dom-if" if="{{referActivity}}">
         <div class="refer-activity" id="refer-activity">
           <!--<canvas id="back-canvas" width="500px"></canvas>-->
@@ -196,6 +232,11 @@
           value: 1,
           observer: 'referViewerPdfPageChanged'
         },
+        viewPdfPage: {
+          type: Number,
+          value: 1,
+          observer: 'viewPdfPageChanged'
+        },
         boundingBoxes: {
           type: Object
         }
@@ -218,6 +259,27 @@
       // referViewerPdfChanged: function(pdf) {
       //   this.getPage(pdf, 1);
       // },
+
+      getViewPage: function(pdf, number) {
+        pdf.getPage(number).then(function(page) {
+          var viewport = page.getViewport(1);
+          var scale = (this.$$('#container-panel').getBoundingClientRect().width - 20 ) / viewport.width;
+          var scaledViewport = page.getViewport(scale);
+
+          var canvas = this.$$('#view-canvas');
+          var context = canvas.getContext('2d');
+          canvas.height = scaledViewport.height;
+          canvas.width = scaledViewport.width;
+          var renderContext = {
+            canvasContext: context,
+            viewport: scaledViewport
+          };
+
+          page.render(renderContext);
+
+          console.log(this.viewBoxes);
+        }.bind(this));
+      },
 
       getPage: function(pdf, number) {
         pdf.getPage(number).then(function(page) {
@@ -299,14 +361,16 @@
               page: 1,
               thumbnail: canvas.toDataURL()
             }
-          }
+          };
         }
 
-        this.fire('save-activity', obj, {bubble: false})
+        this.fire('save-activity', obj, {bubble: false});
         this.closeActivity();
       },
 
       openActivity: function(data) {
+        this.closeViewActivity();
+        this.closeHoverActivity();
         var backCanvas = document.createElement('canvas');
         backCanvas.setAttribute('id', 'back-canvas');
         backCanvas.setAttribute('width', '500px');
@@ -315,11 +379,11 @@
         canvas.setAttribute('width', '500px');
         this.boundingBoxes = {};
         this.referActivity = data.activity;
+
         if (this.referActivity && data.pdf) {
-          Polymer.dom(this.$$('#refer-activity')).insertBefore(backCanvas, this.$$('#page-left-button'))
-          Polymer.dom(this.$$('#refer-activity')).insertBefore(canvas, this.$$('#page-left-button'))
+          Polymer.dom(this.$$('#refer-activity')).insertBefore(backCanvas, this.$$('#page-left-button'));
+          Polymer.dom(this.$$('#refer-activity')).insertBefore(canvas, this.$$('#page-left-button'));
           this.referViewerPdfName = data.file;
-          // setTimeout(function(){
           this.$$('#refer-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
           this.canvas = new fabric.Canvas(this.$$('#canvas'));
           this.referViewerPdf = data.pdf;
@@ -365,7 +429,7 @@
               this.canvas.on('mouse:move', function (option) {
                 var e = option.e;
                 this.boundingBoxes[id].width = e.offsetX - startX;
-                this.boundingBoxes[id].height = e.offsetY - startY - 64
+                this.boundingBoxes[id].height = e.offsetY - startY - 64;
                 rect2.set('width', this.boundingBoxes[id].width);
                 rect2.set('height', this.boundingBoxes[id].height);
                 rect2.setCoords();
@@ -386,8 +450,7 @@
               //   console.log(this.boundingBoxes[i]);
               // }
             }.bind(this));
-          }.bind(this))
-          // }.bind(this), 500)
+          }.bind(this));
         }
       },
 
@@ -430,23 +493,42 @@
 
             if (box) {
               context.beginPath();
-              context.lineWidth="6=4";
+              context.lineWidth="4";
               context.strokeStyle="red";
               context.rect(box.left, box.top, box.width, box.height);
               context.stroke();
             }
-
           };
-
           imageObj.src = image;
         }.bind(this), 100)
       },
 
       closeHoverActivity: function() {
-        var canvas = this.$$('#hover-canvas');
-        var context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
+        if (this.hoverActivity) {
+          var canvas = this.$$('#hover-canvas');
+          var context = canvas.getContext('2d');
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
         this.hoverActivity = false;
+      },
+
+      openViewActivity: function(data) {
+        console.log(data);
+        this.closeHoverActivity();
+        this.viewActivity = true;
+        setTimeout(function(){
+          this.viewBoxes = data.boxes;
+          this.getViewPage(data.pdf, 1);
+        }.bind(this), 100);
+      },
+
+      closeViewActivity: function() {
+        if (this.viewActivity) {
+          var canvas = this.$$('#view-canvas');
+          var context = canvas.getContext('2d');
+          context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        this.viewActivity = false;
       },
 
       play: function() {

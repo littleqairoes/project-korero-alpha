@@ -1,0 +1,188 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../../bower_components/polymerfire/firebase-query.html">
+<link rel="import" href="../../../../../bower_components/paper-fab/paper-fab.html">
+<link rel="import" href="../../../../../bower_components/paper-tooltip/paper-tooltip.html">
+<link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../blocks/new-discussion-block.html">
+<link rel="import" href="../blocks/discussion-block.html">
+<link rel="import" href="../blocks/thumbnails-block.html">
+
+<dom-module id="discussion-area">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .discussion-area-content {
+        position: relative;
+        width: 100%;
+      }
+
+      :host .thumbnails-block-container {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        width: 350px;
+        background-color: #FFF;
+      }
+
+      :host #new-discussion-button {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+      }
+    </style>
+
+    <firebase-query
+      id="query"
+      path="/korero/[[videoid]]/discussion"
+      data="{{discussions}}">
+    </firebase-query>
+
+    <paper-material>
+      <div id="discussion-area-content">
+        <template is="dom-if" if="{{viewNewDiscussionBlock}}">
+          <new-discussion-block
+            id="new-discussion-block"
+            on-ready-edit-activity="_readyEditActivity"
+            on-edit-activity="_editActivity"
+            on-open-thumbnail-block="_openThumbnailBlock"
+            on-mouseover-node="_openThumbnailBlock"
+            on-mouseout-node="_mouseoutNode"
+            on-tap-node="_openThumbnailBlock"
+            on-close-thumbnail="_closeThumbnailBlock"
+            on-close-edit-activity="_closeEditActivity"
+          ></new-discussion-block>
+        </template>
+        <template is="dom-repeat" items="{{discussions}}">
+          <discussion-block
+            discussion="{{item}}"
+            on-mouseover-node="_openThumbnailBlock"
+            on-mouseout-node="_mouseoutNode"
+            on-tap-node="_openThumbnailBlock"
+            on-close-edit-activity="_closeEditActivity"
+          ></discussion-block>
+        </template>
+        <paper-fab
+          id="new-discussion-button"
+          icon="communication:chat"
+          on-tap="_tapNewDiscussion">
+        </paper-fab>
+        <paper-tooltip
+          for="new-discussion-button"
+          position="left"
+          animation-delay="0">
+          Add Discussion
+        </paper-tooltip>
+        <template is="dom-if" if="{{viewThumbnailBlock}}">
+          <div class="thumbnails-block-container">
+            <thumbnails-block
+              id="thumbnails-block"
+              on-mouseover-thumbnail="_mouseoverThumbnail"
+              on-mouseout-thumbnail="_mouseoutThumbnail"
+              on-tap-thumbnail="_tapThumbnail"
+              on-close-thumbnails-block="_permanentCloseThumbnailBlock"
+              on-open-editor-options="_openEditorOptions"
+              on-remove-thumbnails-block="_removeThumbnailBlock">
+            </thumbnails-block>
+          </div>
+        </template>
+      </div>
+    </paper-material>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'discussion-area',
+      properties: {
+        videoid: {
+          type: String
+        },
+        viewThumbnailBlock: {
+          type: Boolean,
+          value: false
+        },
+        permanentThumbnailBlock: {
+          type: Boolean,
+          value: false
+        },
+        viewNewDiscussionBlock: {
+          type: Boolean,
+          value: false
+        },
+        videoStart: {
+          type: Number,
+          notify: true
+        },
+        videoEnd: {
+          type: Number,
+          notify: true
+        },
+        videoTime: {
+          type: Number,
+          notify: true
+        }
+      },
+      _mouseoutNode: function() {
+        if (!this.permanentThumbnailBlock) {
+          this._closeThumbnailBlock();
+        }
+      },
+      _openThumbnailBlock: function(e) {
+        this.viewThumbnailBlock = true;
+        this.permanentThumbnailBlock = e.detail.open;
+        setTimeout(function(){
+          this.$$('#thumbnails-block').setNode(e.detail.node, e.detail.text, e.detail.newDiscussion, e.detail.open);
+        }.bind(this), 100);
+      },
+      _mouseoverThumbnail: function(e) {
+        this.fire('mouseover-thumbnail', e.detail, {bubble: false});
+      },
+      _mouseoutThumbnail: function() {
+        this.fire('mouseout-thumbnail', {}, {bubble: false});
+      },
+      _tapThumbnail: function(e) {
+        this.fire('mouseover-thumbnail', e.detail, {bubble: false});
+      },
+      _closeThumbnailBlock: function() {
+        this.$$('#thumbnails-block').setPrevious();
+      },
+      _permanentCloseThumbnailBlock: function() {
+        this.$$('#thumbnails-block').setNode();
+        this.viewThumbnailBlock = false;
+        if (this.viewNewDiscussionBlock) {
+          this.$$('#new-discussion-block').closedThumbnailBlock();
+        }
+      },
+      _removeThumbnailBlock: function() {
+        this.viewThumbnailBlock = false;
+      },
+      _openEditorOptions: function() {
+        if (this.viewNewDiscussionBlock) {
+          this.$$('#new-discussion-block').referMore();
+        }
+      },
+      _tapNewDiscussion: function() {
+        this.viewNewDiscussionBlock = true;
+        setTimeout(function(){
+          this.$$('#new-discussion-block').newDiscussion();
+        }.bind(this), 100);
+
+      },
+      _readyEditActivity: function() {
+        this.fire('ready-edit-activity', {}, {bubble: false});
+      },
+      _editActivity: function(e) {
+        this.fire('edit-activity', e.detail, {bubble: false});
+      },
+      _closeEditActivity: function() {
+        this.fire('close-edit-activity', {}, {bubble: false});
+      },
+      cancelEditActivity: function() {
+        this.$$('#new-discussion-block').cancelEditActivity();
+      },
+      saveEditActivity: function(data) {
+        this.$$('#new-discussion-block').saveEditActivity(data);
+      }
+    });
+  </script>
+</dom-module>

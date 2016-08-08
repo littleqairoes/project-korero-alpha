@@ -1,0 +1,97 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+<link rel="import" href="../components/areas/activity-area.html">
+<link rel="import" href="../components/areas/discussion-area.html">
+
+<dom-module id="korero-viewer">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .discussion-area {
+        min-width: 320px;
+      }
+
+      :host .activity-area {
+        min-width: 320px;
+      }
+    </style>
+
+    <app-route
+      route="{{moduleRoute}}"
+      pattern="/:videoid"
+      data="{{moduleData}}"
+      tail="{{subroute}}">
+    </app-route>
+
+    <div class="horizontal layout fullbleed wrap">
+      <div class="flex-3 activity-area">
+        <activity-area
+          id="activity-area"
+          videoid="[[videoid]]"
+          on-cancel-edit-activity="_cancelEditActivity"
+          on-save-edit-activity="_saveEditActivity"
+        ></activity-area>
+      </div>
+      <div class="flex discussion-area">
+        <discussion-area
+          id="discussion-area"
+          videoid="[[videoid]]"
+          on-ready-edit-activity="_readyEditActivity"
+          on-edit-activity="_editActivity"
+          on-close-edit-activity="_closeEditActivity"
+          on-mouseover-thumbnail="_mouseoverThumbnail"
+          on-mouseout-thumbnail="_mouseoutThumbnail"
+          on-tap-thumbnail="_tapThumbnail"
+        ></discussion-area>
+      </div>
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'korero-viewer',
+      properties: {
+        videoid: {
+          type: String,
+          reflectToAttribute: true
+        }
+      },
+      observers: [
+        '_moduleDataChanged(moduleData.videoid)'
+      ],
+      _moduleDataChanged: function(id) {
+        this.videoid = id || 'UieTvd7jU0E';
+      },
+      _readyEditActivity: function() {
+        this.$$('#activity-area').openEditActivity();
+      },
+      _editActivity: function(e) {
+        if (e.model) {
+          this.$$('#activity-area').editActivity(e.detail);
+        }
+      },
+      _closeEditActivity: function() {
+        this.$$('#activity-area').closeEditActivity();
+      },
+      _cancelEditActivity: function() {
+        this.$$('#discussion-area').cancelEditActivity();
+      },
+      _saveEditActivity: function(e) {
+        if (e.model) {
+          this.$$('#discussion-area').saveEditActivity(e.detail);
+        }
+      },
+      _mouseoverThumbnail: function(e) {
+        if (e.model) {
+          this.$$('activity-area').hoverActivity(e.detail);
+        }
+      },
+      _mouseoutThumbnail: function() {
+        this.$$('activity-area').closeHoverActivity();
+      },
+      _tapThumbnail: function(e) {
+
+      }
+    });
+  </script>
+</dom-module>

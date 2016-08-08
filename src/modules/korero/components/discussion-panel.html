@@ -153,6 +153,9 @@
                   data-left$="[[bottomTile.left]]"
                   data-width$="[[bottomTile.width]]"
                   data-height$="[[bottomTile.height]]"
+                  data-node-id$="[[item.nodeId]]"
+                  data-refer-id$="[[item.referId]]"
+                  data-discussion-id$="[[item.discussionId]]"
                 >
               </div>
             </template>
@@ -307,7 +310,7 @@
           this.createNode.innerHTML = this.selected.text;
           this.createNode.setAttribute('style', 'background-color: yellow');
           var id = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 10});
-          this.createNode.setAttribute('refer-id', id)
+          this.createNode.setAttribute('node-id', id)
           this.newDiscussion.links[id] = {};
           this.selected.range.deleteContents();
           this.selected.range.insertNode(this.createNode);
@@ -366,13 +369,16 @@
 
       saveActivity: function(data) {
         var array = JSON.parse(this.createNode.getAttribute('data-hover'));
-        var nodeId = this.createNode.getAttribute('refer-id')
+        var nodeId = this.createNode.getAttribute('node-id');
+
         var id = null;
         do {
           id = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz'});
         } while (this.newDiscussion.links[nodeId][id]);
-        this.newDiscussion.links[nodeId][id] = data;
+        data.nodeId = nodeId;
+        data.referId = id;
         console.log(data);
+        this.newDiscussion.links[nodeId][id] = data;
         array.push(id);
 
         this.createNode.setAttribute('data-hover', JSON.stringify(array));
@@ -394,7 +400,7 @@
       },
 
       hoverThumbnail: function(e) {
-        console.log(e.target);
+        // console.log(e.target);
         var top = e.target.getAttribute('data-top');
         var left = e.target.getAttribute('data-left');
         var width = e.target.getAttribute('data-width');
@@ -414,6 +420,22 @@
       },
 
       clickThumbnail: function(e) {
+        this.fire('click-activity', {}, {bubble: false});
+        PDFJS.getDocument(e.target.getAttribute('data-filename')).then(function(pdf){
+          var id = e.target.getAttribute('data-discussion-id');
+          var nodeId = e.target.getAttribute('data-node-id');
+          console.log(id)
+          console.log(nodeId)
+          var obj
+          if (!id) {
+            obj = this.newDiscussion.links[nodeId]
+          } else {
+            obj = this.discussions[id].links[nodeId]
+          }
+          this.fire('click-activity', {pdf: pdf, boxes: obj}, {bubble: false});
+        }.bind(this)).catch(function(err){
+          console.log(err);
+        }.bind(this));
       },
 
       exitBottom: function() {
@@ -433,20 +455,25 @@
       },
 
       openThisBottom: function(e) {
-        var array = JSON.parse(e.target.getAttribute('data-hover'));
-        var nodeId = e.target.getAttribute('refer-id');
+        // var array = JSON.parse(e.target.getAttribute('data-hover'));
+        var nodeId = e.target.getAttribute('node-id');
         var id = e.target.getAttribute('discussion-id');
-        console.log(nodeId)
+        // console.log(nodeId)
         var obj
         if (!id) {
-          obj = this.newDiscussion.links[nodeId]
+          obj = this.newDiscussion.links[nodeId];
         } else {
-          obj = this.discussions[id].links[nodeId]
+          obj = this.discussions[id].links[nodeId];
         }
 
         if (obj) {
           this.openBottom = []
           for (var i in obj) {
+            if (id) {
+              obj[i].discussionId = id;
+            }
+            obj[i].nodeId = nodeId;
+            console.log(obj[i]);
             this.push('openBottom', obj[i]);
           }
         } else {

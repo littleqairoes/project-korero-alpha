@@ -1,0 +1,71 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer.html">
+
+<dom-module id="hover-document-block">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host {
+        width: 100%;
+      }
+
+      :host #hover-activity {
+        position: relative;
+        width: inherit;
+        overflow-y: auto;
+      }
+    </style>
+
+    <div class="hover-activity" id="hover-activity">
+      <canvas id="hover-canvas" width="500px"></canvas>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'hover-document-block',
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+      _resize: function() {
+        this.$$('#hover-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+      },
+      setDocument: function(data) {
+        console.log(data);
+        var canvas = this.$$('#hover-canvas');
+        var context = canvas.getContext('2d');
+        var imageObj = new Image();
+        var el = this.$$('#hover-activity');
+        imageObj.onload = function() {
+          canvas.height = this.height;
+          canvas.width = this.width;
+          context.drawImage(this, 0, 0);
+          if (data.left) {
+            context.beginPath();
+            context.lineWidth="4";
+            context.strokeStyle="red";
+            context.rect(data.left, data.top, data.width, data.height);
+            context.stroke();
+            el.scrollTop = (data.top - 200);
+            console.log(el.scrollTop)
+            // el.scrollTo(0, data.top);
+          }
+        };
+        imageObj.src = data.thumbnail;
+      },
+      closeHover: function() {
+        var canvas = this.$$('#hover-canvas');
+        var context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    })
+  </script>
+</dom-module>
+
+
