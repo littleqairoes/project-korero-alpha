@@ -30,6 +30,10 @@
           videoid="[[videoid]]"
           on-cancel-edit-activity="_cancelEditActivity"
           on-save-edit-activity="_saveEditActivity"
+          on-cancel-edit-comment-activity="_cancelEditCommentActivity"
+          on-save-edit-comment-activity="_saveEditCommentActivity"
+          on-save-linking="_saveLinking"
+          on-cancel-linking="_cancelLinking"
         ></activity-area>
       </div>
       <div class="flex discussion-area">
@@ -37,12 +41,18 @@
           id="discussion-area"
           videoid="[[videoid]]"
           on-ready-edit-activity="_readyEditActivity"
+          on-ready-edit-comment-activity="_readyEditCommentActivity"
           on-edit-activity="_editActivity"
+          on-edit-comment-activity="_editCommentActivity"
           on-close-edit-activity="_closeEditActivity"
+          on-close-edit-comment-activity="_closeEditCommentActivity"
           on-mouseover-thumbnail="_mouseoverThumbnail"
           on-mouseout-thumbnail="_mouseoutThumbnail"
           on-tap-thumbnail="_tapThumbnail"
           on-pre-show-thumbnail="_preShowThumbnail"
+          on-start-linking="_startLinking"
+          on-tap-video="_tapVideo"
+          on-mouseover-video="_mouseoverVideo"
         ></discussion-area>
       </div>
     </div>
@@ -82,9 +92,36 @@
           this.$$('#discussion-area').saveEditActivity(e.detail);
         }
       },
+
+      _readyEditCommentActivity: function() {
+        this.$$('#activity-area').openEditCommentActivity();
+      },
+      _editCommentActivity: function(e) {
+        if (e.model) {
+          this.$$('#activity-area').editCommentActivity(e.detail);
+        }
+      },
+      _closeEditCommentActivity: function() {
+        this.$$('#activity-area').closeEditCommentActivity();
+      },
+      _cancelEditCommentActivity: function(e) {
+        if (e.model) {
+          this.$$('#discussion-area').cancelEditCommentActivity(e.detail);
+        }
+      },
+      _saveEditCommentActivity: function(e) {
+        if (e.model) {
+          this.$$('#discussion-area').saveEditCommentActivity(e.detail);
+        }
+      },
       _mouseoverThumbnail: function(e) {
         if (e.model) {
           this.$$('activity-area').hoverActivity(e.detail);
+        }
+      },
+      _mouseoverVideo: function(e) {
+        if (e.model) {
+          this.$$('activity-area').showLinking(e.detail.videostart, e.detail.videoend);
         }
       },
       _mouseoutThumbnail: function() {
@@ -99,6 +136,23 @@
         if (e.model) {
           this.$$('#activity-area').showActivity(e.detail);
         }
+      },
+      _tapVideo: function(e) {
+        if (e.model) {
+          this.$$('activity-area').showLinking(e.detail.videostart, e.detail.videoend, true);
+        }
+      },
+
+      _startLinking: function(e) {
+        this.$$('#activity-area').startLinking(e.detail);
+      },
+      _saveLinking: function(e) {
+        console.log(e)
+        this.$$('#discussion-area').saveLinking(e.detail);
+
+      },
+      _cancelLinking: function() {
+        this.$$('#discussion-area').cancelLinking();
       }
     });
   </script>

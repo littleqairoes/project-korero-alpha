@@ -4,7 +4,7 @@
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
 
-<dom-module id="edit-document-block">
+<dom-module id="edit-document-comment-block">
   <template>
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
       :host {
@@ -54,12 +54,12 @@
         <paper-icon-button
           id="edit-activity-ok"
           icon="icons:check"
-          on-tap="saveActivity"
+          on-tap="saveCommentActivity"
         ></paper-icon-button>
         <paper-icon-button
           id="edit-activity-cancel"
           icon="icons:close"
-          on-tap="cancelActivity"
+          on-tap="cancelCommentActivity"
         ></paper-icon-button>
         <div class="flex"></div>
       </div>
@@ -68,7 +68,7 @@
 
   <script>
     Polymer({
-      is: 'edit-document-block',
+      is: 'edit-document-comment-block',
       properties: {
         boxes: {
           type: Object,
@@ -115,6 +115,7 @@
         canvas.setAttribute('width', '500px');
         this.boxes = {};
         this.page = 1;
+        this.discussionid = data.discussionid;
 
         if (data.pdf) {
           Polymer.dom(this.$$('#edit-activity')).insertBefore(backCanvas, this.$$('#page-left-button'));
@@ -242,9 +243,9 @@
         }
       },
 
-      cancelActivity: function() {
+      cancelCommentActivity: function() {
         this.closeActivity();
-        this.fire('cancel-edit-activity', {}, {bubbles: false});
+        this.fire('cancel-edit-comment-activity', {discussionid: this.discussionid}, {bubbles: false});
       },
 
       closeActivity: function() {
@@ -256,9 +257,11 @@
         }
       },
 
-      saveActivity: function() {
+      saveCommentActivity: function() {
+        console.log('hello')
         var obj = {
-          file: this.file
+          file: this.file,
+          discussionid: this.discussionid
         };
 
         for (var i in this.boxes) {
@@ -285,7 +288,7 @@
         }
 
         this.closeActivity();
-        this.fire('save-edit-activity', obj, {bubbles: false});
+        this.fire('save-edit-comment-activity', obj, {bubbles: false});
       },
     })
   </script>

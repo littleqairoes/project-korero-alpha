@@ -138,19 +138,19 @@
           }
         } else {
           this.permanent = false;
-          this.fire('remove-thumbnails-block', {}, {bubble: false});
+          this.fire('remove-thumbnails-block', {}, {bubbles: false});
         }
       },
       _mouseoverThumbnail: function(e) {
-        this.fire('mouseover-thumbnail', this.boxes[e.target.getAttribute('data-index')], {bubble: false});
+        this.fire('mouseover-thumbnail', this.boxes[e.target.getAttribute('data-index')], {bubbles: false});
       },
       _mouseoutThumbnail: function(e) {
-        this.fire('mouseout-thumbnail', {}, {bubble: false});
+        this.fire('mouseout-thumbnail', {}, {bubbles: false});
       },
       _tapThumbnail: function(e) {
-        this.fire('pre-show-thumbnail', this.boxes[e.target.getAttribute('data-index')], {bubble: false});
+        this.fire('pre-show-thumbnail', this.boxes[e.target.getAttribute('data-index')], {bubbles: false});
         PDFJS.getDocument(this.boxes[e.target.getAttribute('data-index')].file).then(function(pdf){
-          this.fire('tap-thumbnail', {pdf: pdf, boxes: this.boxes[e.target.getAttribute('data-index')]}, {bubble: false});
+          this.fire('tap-thumbnail', {pdf: pdf, boxes: this.boxes[e.target.getAttribute('data-index')]}, {bubbles: false});
         }.bind(this)).catch(function(err){
           console.log(err);
           this.$.toaster.show(err.message);
@@ -158,10 +158,10 @@
       },
       _closeThumbnailsBlock: function(e) {
         this.permanent = false;
-        this.fire('close-thumbnails-block', {}, {bubble: false});
+        this.fire('close-thumbnails-block', {}, {bubbles: false});
       },
       _openEditorOptions: function() {
-        this.fire('open-editor-options', {}, {bubble: false});
+        this.fire('open-editor-options', {}, {bubbles: false});
       }
     })
   </script>

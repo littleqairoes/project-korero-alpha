@@ -1,0 +1,251 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../../bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
+
+<dom-module id="video-block">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .scrubber-area {
+        margin-left: 8px;
+        margin-right: 8px;
+        height: 5px;
+        background-color: #AAA;
+        position: relative;
+        cursor: pointer;
+      }
+
+      :host #video-play-time {
+        height: 5px;
+        position: relative;
+        background-color: red;
+        width: 0px;
+      }
+
+      :host #linking-play-time {
+        height: 5px;
+        position: absolute;
+        background-color: blue;
+        width: 0px;
+        top: 0px;
+        opacity: 0.5;
+      }
+
+      :host #video-content {
+        min-width: 320px;
+      }
+    </style>
+
+    <div class="container" id="container-panel">
+      <div class="horizontal layout center">
+        <div class="flex">
+
+        </div>
+        <div class="flex-5" style="margin-top: 20px">
+          <google-youtube
+            width="100%"
+            id="video-content"
+            video-id="[[videoid]]"
+            chromeless
+            on-google-youtube-ready="videoReady"
+            currenttime="{{videotime}}"
+            duration="{{videoduration}}"
+            currenttimeformatted="{{videoShowTime}}">
+          </google-youtube>
+
+          <div class="horizontal layout center">
+            <paper-icon-button
+              icon="av:play-circle-outline"
+              on-tap="play">
+            </paper-icon-button>
+            <paper-icon-button
+              icon="av:pause-circle-outline"
+              on-tap="pause">
+            </paper-icon-button>
+            <div
+              class="flex scrubber-area"
+              on-down="scrub"
+              on-track="scrub"
+              id="video-scrubber-area"
+            >
+              <div id="video-play-time"></div>
+              <div id="linking-play-time"></div>
+            </div>
+            <div class="" style="margin: 8px; width: 50px; text-align: center">
+              {{videoShowTime}}
+            </div>
+          </div>
+          <template is="dom-if" if="{{linking}}">
+            <div class="horizontal layout">
+              <div class="flex"></div>
+              <template is="dom-if" if="{{linkingEdit}}">
+              <paper-icon-button
+                id="linking-ok"
+                icon="icons:check"
+                on-tap="saveLinking"
+              ></paper-icon-button>
+              </template>
+              <paper-icon-button
+                id="linking-cancel"
+                icon="icons:close"
+                on-tap="cancelLinking"
+              ></paper-icon-button>
+              <div class="flex"></div>
+            </div>
+          </template>
+
+        </div>
+
+        <div class="flex">
+
+        </div>
+      </div>
+    </div>
+    <paper-toast id="toaster"></paper-toast>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'video-block',
+      properties: {
+        videotime: {
+          type: Number,
+          observer: "changeVideoTime"
+        },
+        videoShowTime: {
+          type: String
+        },
+        videoduration: {
+          type: Number
+        },
+        linking: {
+          type: Boolean
+        },
+        linkingEdit: {
+          type: Boolean
+        },
+        linkVideoStart: {
+          type: Number
+        },
+        linkVideoEnd: {
+          type: Number
+        },
+      },
+
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+
+      _resize: function() {
+        var height = ((this.$$('#video-content').getBoundingClientRect().width * 9) / 16)
+        this.$$('#video-content').setAttribute('height', `${height}px`);
+      },
+
+      play: function() {
+        this.$$('#video-content').play()
+      },
+
+      pause: function() {
+        this.$$('#video-content').pause()
+      },
+
+      scrub: function(e) {
+        var el = this.$$('#video-scrubber-area');
+        var elRect = el.getBoundingClientRect();
+        var scrubPos = (e.detail.x - elRect.left) / elRect.width
+        var time = this.videoduration * scrubPos
+
+        if (this.linking) {
+          // console.log(time, this.linkVideoStart + (((this.linkVideoStart - this.linkVideoEnd) / 2)), this.linkVideoStart)
+          if (time <= this.linkVideoStart + (((this.linkVideoEnd - this.linkVideoStart) / 2))) {
+            this.linkVideoStart = time;
+          } else {
+            this.linkVideoEnd = time;
+          }
+          this.changeLinkVideoTime();
+          this.$$('#video-content').seekTo(this.linkVideoStart)
+        } else {
+          this.$$('#video-content').seekTo(this.videoduration != 1 ? this.videoduration * scrubPos : 0);
+          this.changeVideoTime(time);
+        }
+      },
+
+      videoReady: function() {
+        //var el = this.$$('#video-scrubber-area');
+        this._resize();
+      },
+
+      changeVideoTime: function(time) {
+        console.log(time);
+        var elPlayTime = this.$$('#video-play-time');
+        elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
+        if (this.linking) {
+          if (time >= this.linkVideoEnd) {
+            this.pause();
+          }
+        }
+      },
+
+      changeLinkVideoTime: function() {
+        var elPlayTime = this.$$('#linking-play-time');
+        elPlayTime.setAttribute('style', `left: ${(this.linkVideoStart/this.videoduration)*100}%; width: ${((this.linkVideoEnd - this.linkVideoStart)/this.videoduration)*100}%`);
+      },
+
+      startLinking: function(data) {
+        this.pause();
+        this.discussionid = data.discussionid
+        this.linking = true;
+        this.linkingEdit = true;
+        this.linkVideoStart = this.videotime;
+        this.linkVideoEnd = this.linkVideoStart + (this.videoduration * 0.05);
+        this.changeLinkVideoTime();
+      },
+
+      showLinking: function(start, end, tap) {
+        this.linking = true;
+        this.linkVideoStart = start;
+        this.linkVideoEnd = end;
+        this.linkTapped = tap;
+        this.changeLinkVideoTime();
+        this.$$('#video-content').seekTo(this.linkVideoStart);
+        this.play();
+      },
+
+      saveLinking: function() {
+        this.fire('save-linking', {videostart: this.linkVideoStart, videoend: this.linkVideoEnd, video: this.videoid, discussionid: this.discussionid}, {bubbles: false});
+        this.resetLinking();
+        this.linking = false
+      },
+
+      cancelLinking: function() {
+        this.fire('cancel-linking', {}, {bubbles: false});
+        this.linkTapped = false;
+        this.resetLinking();
+        this.linking = false;
+      },
+
+      resetLinking: function() {
+        if (!this.linkTapped) {
+          this.linkVideoStart = 0;
+          this.linkVideoEnd = 0;
+          this.linking = false;
+          this.linkingEdit = false
+          var elPlayTime = this.$$('#linking-play-time');
+          elPlayTime.setAttribute('style', `left: 0; width: 0`);
+          this.pause();
+        }
+      }
+    })
+  </script>
+</dom-module>

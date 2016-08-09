@@ -1,5 +1,9 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../bower_components/polymerfire/firebase-query.html">
+<link rel="import" href="comment-block.html">
+<link rel="import" href="new-comment-block.html">
 
 <dom-module id="discussion-block">
   <template>
@@ -26,7 +30,17 @@
       :host .text {
         font-size: 0.8em;
       }
+
+      :host .comments {
+        margin-left: 20px;
+      }
     </style>
+
+    <firebase-query
+      id="query"
+      path="/korero/[[videoid]]/comments/[[discussion.$key]]"
+      data="{{comments}}">
+    </firebase-query>
 
     <paper-material>
       <div id="discussion-block-content">
@@ -34,6 +48,43 @@
         <hr>
         <div class="text" id="discussion-text"></div>
       </div>
+      <template is="dom-if" if="{{!viewNewCommentBlock}}">
+      <div class="">
+        <paper-button on-tap="reply">
+          Reply
+        </paper-button>
+      </div>
+      </template>
+
+      <template is="dom-if" if="{{viewNewCommentBlock}}">
+        <new-comment-block
+          id="new-comment-block"
+          discussionid = "[[discussion.$key]]"
+          on-ready-edit-comment-activity="_readyEditActivity"
+          on-edit-comment-activity="_editActivity"
+          on-open-thumbnail-block="_openThumbnailBlock"
+          on-mouseover-node="_openThumbnailBlock"
+          on-mouseout-node="_mouseoutNode"
+          on-tap-node="_openThumbnailBlock"
+          on-close-thumbnail="_closeThumbnailBlock"
+          on-close-edit-activity="_closeEditActivity"
+          on-start-comment-linking="_startCommentLinking"
+          on-cancel-comment="_cancelComment"
+        ></new-comment-block>
+      </template>
+
+      <div class="comments">
+        <template is="dom-repeat" items="{{comments}}">
+          <comment-block
+            comment="{{item}}"
+            on-mouseover-node="_openThumbnailBlock"
+            on-mouseout-node="_mouseoutNode"
+            on-tap-node="_openThumbnailBlock"
+            on-close-edit-activity="_closeEditActivity"
+          ></comment-block>
+        </template>
+      </div>
+
     </paper-material>
   </template>
 
@@ -44,6 +95,10 @@
         discussion: {
           type: Object,
           observer: '_renderDiscussion'
+        },
+        viewNewCommentBlock: {
+          type: Boolean,
+          value: false
         }
       },
       observers: [
@@ -70,16 +125,59 @@
       _mouseoverNode: function(e) {
         var nodeId = e.target.getAttribute('data-node-id');
         var node = this.discussion.nodes[nodeId];
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubble: false});
+        this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
       },
       _mouseoutNode: function(e) {
-        this.fire('mouseout-node', {}, {bubble: false});
+        this.fire('mouseout-node', {}, {bubbles: false});
       },
       _tapNode: function(e) {
-        this.fire('close-edit-activity', {}, {bubble: false});
+        this.fire('close-edit-activity', {}, {bubbles: false});
         var nodeId = e.target.getAttribute('data-node-id');
         var node = this.discussion.nodes[nodeId];
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubble: false});
+        this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
+      },
+      _readyEditActivity: function() {
+        this.fire('ready-edit-comment-activity', {}, {bubbles: false});
+      },
+      _editActivity: function(e) {
+        if (e.model) {
+          this.fire('edit-comment-activity', e.detail, {bubbles: false});
+        }
+      },
+      _closeEditActivity: function() {
+        this.fire('close-edit-comment-activity', {}, {bubbles: false});
+      },
+      cancelEditActivity: function() {
+        this.$$('#new-comment-block').cancelEditActivity();
+      },
+      saveEditActivity: function(data) {
+        this.$$('#new-comment-block').saveEditActivity(data);
+      },
+      reply: function() {
+        this.viewNewCommentBlock = true;
+        setTimeout(function(){
+          this.$$('#new-comment-block').newComment();
+        }.bind(this), 100);
+
+      },
+      _openThumbnailBlock: function(e) {
+        this.fire('open-thumbnail-block', e.detail, {bubbles: false});
+      },
+      closedThumbnailBlock: function() {
+        if (this.viewNewCommentBlock) {
+          this.$$('#new-comment-block').closedThumbnailBlock();
+        }
+      },
+      _startCommentLinking: function(e) {
+        this.fire('start-comment-linking', e.detail, {bubbles: false});
+      },
+      saveLinking: function(data) {
+        if (this.viewNewCommentBlock) {
+          this.$$('#new-comment-block').saveLinking(data);
+        }
+      },
+      _cancelComment: function() {
+        this.viewNewCommentBlock = false;
       }
     })
   </script>

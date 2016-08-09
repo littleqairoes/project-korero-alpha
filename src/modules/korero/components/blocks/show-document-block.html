@@ -208,7 +208,7 @@
         if (this.$$('.canvas-container')) {
           Polymer.dom(this.$$('#show-activity')).removeChild(this.$$('.canvas-container'));
         }
-        this.fire('close-show-activity', {}, {bubble: false});
+        this.fire('close-show-activity', {}, {bubbles: false});
       },
     })
   </script>
