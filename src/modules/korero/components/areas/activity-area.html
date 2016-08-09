@@ -3,6 +3,7 @@
 <link rel="import" href="../blocks/video-block.html">
 <link rel="import" href="../blocks/edit-document-block.html">
 <link rel="import" href="../blocks/hover-document-block.html">
+<link rel="import" href="../blocks/show-document-block.html">
 
 <dom-module id="activity-area">
   <template>
@@ -19,6 +20,12 @@
         position: absolute;
         top: 0;
       }
+
+      :host #show-document-block {
+        position: absolute;
+        top: 0;
+      }
+
       :host #container-panel {
         position: relative;
       }
@@ -30,6 +37,9 @@
         <div class="flex-5" style="margin-top: 20px">
           <video-block
             videoid="[[videoid]]"
+            video-time="{{videoTime}}"
+            video-start="{{videoStart}}"
+            video-end="{{videoEnd}}"
           ></video-block>
         </div>
         <div class="flex">
@@ -38,6 +48,12 @@
       <template is="dom-if" if="{{viewHoverActivity}}">
         <hover-document-block id="hover-document-block"></hover-document-block>
       </template>
+      <template is="dom-if" if="{{viewShowActivity}}">
+        <show-document-block
+          id="show-document-block"
+          on-close-show-activity="closeShowActivityFromActivity"
+        ></show-document-block>
+      </template>
       <template is="dom-if" if="{{viewEditActivity}}">
         <edit-document-block
           id="edit-document-block"
@@ -45,6 +61,11 @@
           on-save-edit-activity="_saveEditActivity">
         </edit-document-block>
       </template>
+      <template is="dom-if" if="{{viewTabBlock}}">
+        <tabs-block
+          id="tab-block"
+        ></tabs-block>
+      </template><
     </div>
   </template>
 
@@ -62,6 +83,22 @@
         viewHoverActivity: {
           type: Boolean,
           value: false
+        },
+        viewShowActivity: {
+          type: Boolean,
+          value: false
+        },
+        videoTime: {
+          type: Number,
+          notify: true
+        },
+        videoStart: {
+          type: Number,
+          notify: true
+        },
+        videoEnd: {
+          type: Number,
+          notify: true
         }
       },
       openEditActivity: function() {
@@ -75,6 +112,25 @@
         setTimeout(function(){
           this.$$('#hover-document-block').setDocument(data);
         }.bind(this), 100);
+      },
+      preShowActivity: function(data) {
+        this.viewShowActivity = true;
+        setTimeout(function(){
+          this.$$('#show-document-block').setPlaceholder(data);
+        }.bind(this), 100)
+      },
+      showActivity: function(data) {
+        this.viewShowActivity = true;
+        setTimeout(function(){
+          this.$$('#show-document-block').setDocument(data);
+        }.bind(this), 100);
+      },
+      closeShowActivity: function() {
+        this.$$('#show-document-block').closeActivity();
+        this.viewShowActivity = false;
+      },
+      closeShowActivityFromActivity: function() {
+        this.viewShowActivity = false;
       },
       closeHoverActivity: function() {
         this.$$('#hover-document-block').closeHover();

@@ -37,7 +37,6 @@
         this.$$('#hover-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
       },
       setDocument: function(data) {
-        console.log(data);
         var canvas = this.$$('#hover-canvas');
         var context = canvas.getContext('2d');
         var imageObj = new Image();

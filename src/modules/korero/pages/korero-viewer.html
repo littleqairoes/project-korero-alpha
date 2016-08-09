@@ -42,6 +42,7 @@
           on-mouseover-thumbnail="_mouseoverThumbnail"
           on-mouseout-thumbnail="_mouseoutThumbnail"
           on-tap-thumbnail="_tapThumbnail"
+          on-pre-show-thumbnail="_preShowThumbnail"
         ></discussion-area>
       </div>
     </div>
@@ -89,8 +90,15 @@
       _mouseoutThumbnail: function() {
         this.$$('activity-area').closeHoverActivity();
       },
+      _preShowThumbnail: function(e) {
+        if (e.model) {
+          this.$$('#activity-area').preShowActivity(e.detail);
+        }
+      },
       _tapThumbnail: function(e) {
-
+        if (e.model) {
+          this.$$('#activity-area').showActivity(e.detail);
+        }
       }
     });
   </script>

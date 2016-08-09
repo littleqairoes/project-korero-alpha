@@ -82,7 +82,8 @@
               on-tap-thumbnail="_tapThumbnail"
               on-close-thumbnails-block="_permanentCloseThumbnailBlock"
               on-open-editor-options="_openEditorOptions"
-              on-remove-thumbnails-block="_removeThumbnailBlock">
+              on-remove-thumbnails-block="_removeThumbnailBlock"
+              on-pre-show-thumbnail="_preShowThumbnail">
             </thumbnails-block>
           </div>
         </template>
@@ -141,7 +142,11 @@
         this.fire('mouseout-thumbnail', {}, {bubble: false});
       },
       _tapThumbnail: function(e) {
-        this.fire('mouseover-thumbnail', e.detail, {bubble: false});
+        this.fire('tap-thumbnail', e.detail, {bubble: false});
+      },
+      _preShowThumbnail: function(e) {
+        console.log('pre-show')
+        this.fire('pre-show-thumbnail', e.detail, {bubble: false});
       },
       _closeThumbnailBlock: function() {
         this.$$('#thumbnails-block').setPrevious();
