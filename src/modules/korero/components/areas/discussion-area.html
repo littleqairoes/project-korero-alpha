@@ -12,7 +12,7 @@
 <dom-module id="discussion-area">
   <template>
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
-      :host .discussion-area-content {
+      :host #discussion-area-content {
         position: relative;
         width: 100%;
       }
@@ -30,6 +30,14 @@
         bottom: 20px;
         right: 20px;
       }
+
+      :host #discussion-area-content h3 {
+        margin: 0;
+        padding: 0;
+        padding-left: 20px;
+        padding-bottom: 20px;
+        padding-top: 10px;
+      }
     </style>
 
     <firebase-query
@@ -38,11 +46,19 @@
       data="{{discussions}}">
     </firebase-query>
 
+    <firebase-query
+      id="query2"
+      path="/korero/[[videoid]]/specifics"
+      data="{{specifics}}">
+    </firebase-query>
+
     <paper-material>
       <div id="discussion-area-content">
         <template is="dom-if" if="{{viewNewDiscussionBlock}}">
           <new-discussion-block
             id="new-discussion-block"
+            videoid="[[videoid]]"
+            ui="[[ui]]"
             on-ready-edit-activity="_readyEditActivity"
             on-edit-activity="_editActivity"
             on-open-thumbnail-block="_openThumbnailBlock"
@@ -53,24 +69,53 @@
             on-close-edit-activity="_closeEditActivity"
             on-start-linking="_startLinking"
             on-cancel-discussion="_cancelDiscussion"
+            on-save-discussion="_saveDiscussion"
+            user="[[user]]"
           ></new-discussion-block>
         </template>
+        <h3>Global Discussions</h3>
         <template is="dom-repeat" items="{{discussions}}">
-          <discussion-block
-            class="discussion-block"
-            id="discussion-{{item.$key}}"
-            discussion="{{item}}"
-            videoid="[[videoid]]"
-            on-mouseover-node="_openThumbnailBlock"
-            on-mouseout-node="_mouseoutNode"
-            on-tap-node="_openThumbnailBlock"
-            on-close-edit-activity="_closeEditActivity"
-            on-close-edit-comment-activity="_closeEditCommentActivity"
-            on-ready-edit-comment-activity="_readyEditCommentActivity"
-            on-edit-comment-activity="_editCommentActivity"
-            on-open-thumbnail-block="_openThumbnailBlock"
-            on-start-comment-linking="_startLinking"
-          ></discussion-block>
+          <!--<template is="dom-if" if="{{checkUI(item.ui)}}">-->
+            <discussion-block
+              class="discussion-block"
+              id="discussion-{{item.$key}}"
+              discussion="{{item}}"
+              videoid="[[videoid]]"
+              ui="[[ui]]"
+              on-mouseover-node="_openThumbnailBlock"
+              on-mouseout-node="_mouseoutNode"
+              on-tap-node="_openThumbnailBlock"
+              on-close-edit-activity="_closeEditActivity"
+              on-close-edit-comment-activity="_closeEditCommentActivity"
+              on-ready-edit-comment-activity="_readyEditCommentActivity"
+              on-edit-comment-activity="_editCommentActivity"
+              on-open-thumbnail-block="_openThumbnailBlock"
+              on-start-comment-linking="_startLinking"
+              user="[[user]]"
+            ></discussion-block>
+          <!--</template>-->
+        </template>
+        <h3>Specific Discussions</h3>
+        <template is="dom-repeat" items="{{specifics}}">
+          <!--<template is="dom-if" if="{{checkUI(item.ui)}}">-->
+            <discussion-block
+              class="discussion-block"
+              id="discussion-{{item.$key}}"
+              discussion="{{item}}"
+              videoid="[[videoid]]"
+              ui="[[ui]]"
+              on-mouseover-node="_openThumbnailBlock"
+              on-mouseout-node="_mouseoutNode"
+              on-tap-node="_openThumbnailBlock"
+              on-close-edit-activity="_closeEditActivity"
+              on-close-edit-comment-activity="_closeEditCommentActivity"
+              on-ready-edit-comment-activity="_readyEditCommentActivity"
+              on-edit-comment-activity="_editCommentActivity"
+              on-open-thumbnail-block="_openThumbnailBlock"
+              on-start-comment-linking="_startLinking"
+              user="[[user]]"
+            ></discussion-block>
+          <!--</template>-->
         </template>
         <paper-fab
           id="new-discussion-button"
@@ -133,8 +178,28 @@
         videoTime: {
           type: Number,
           notify: true
+        },
+        ui: {
+          type: String
+        },
+        filter: {
+          type: Object,
+          value: {
+            ui: 'korero'
+          }
         }
       },
+      // observers: [
+      //   'check(discussions.splices)'
+      // ],
+      // check(data) {
+      //   console.log(data)
+      //   this.discussions
+      // },
+      checkUI: function(ui) {
+        return this.ui === ui;
+      },
+
       _mouseoutNode: function() {
         if (!this.permanentThumbnailBlock) {
           this._closeThumbnailBlock();
@@ -170,8 +235,10 @@
         this.$$('#thumbnails-block').setPrevious();
       },
       _permanentCloseThumbnailBlock: function() {
-        this.$$('#thumbnails-block').setNode();
-        this.viewThumbnailBlock = false;
+        if (this.viewThumbnailBlock) {
+          this.$$('#thumbnails-block').setNode();
+          this.viewThumbnailBlock = false;
+        }
         if (this.viewNewDiscussionBlock) {
           this.$$('#new-discussion-block').closedThumbnailBlock();
         }
@@ -189,6 +256,7 @@
         this.viewNewDiscussionBlock = true;
         setTimeout(function(){
           this.$$('#new-discussion-block').newDiscussion();
+          this.fire('new-discussion', {}, {bubbles: false});
         }.bind(this), 100);
 
       },
@@ -243,9 +311,18 @@
           this.$$('#new-discussion-block').cancelLinking();
         }
       },
+      changeDiscussionTime: function(data) {
+        if (this.viewNewDiscussionBlock) {
+          this.$$('#new-discussion-block').changeDiscussionTime(data);
+        }
+      },
       _cancelDiscussion: function() {
         this.viewNewDiscussionBlock = false;
-        this._permanentCloseThumbnailBlock()
+        this._permanentCloseThumbnailBlock();
+        this.fire('close-discussion', {}, {bubbles: false});
+      },
+      _saveDiscussion: function() {
+        this._cancelDiscussion();
       }
     });
   </script>

@@ -1,6 +1,9 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../../../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icon/iron-icon.html">
+
 <script src="../../../../../bower_components/chance/chance.js"></script>
 <script src="../js/pdf.js"></script>
 
@@ -28,7 +31,7 @@
 
       :host #new-discussion-block-content {
         padding: 20px;
-        padding-top: 10px;
+        padding-top: 0px;
       }
 
       :host #text {
@@ -57,10 +60,23 @@
       :host .text .hover:hover {
         background-color: yellow;
       }
+
+      :host .time {
+        padding: 10px;
+      }
+
     </style>
 
     <paper-material>
-      <div id="new-discussion-block-content">
+      <div class="time">
+        <template is="dom-if" if="{{!discussion.videolink}}">
+          Global: <iron-icon icon="icons:language"></iron-icon>
+        </template>
+        <template is="dom-if" if="{{discussion.videolink}}">
+          Specific: <iron-icon icon="icons:radio-button-checked"></iron-icon> [[timeToString(discussion.start)]]
+        </template>
+      </div>
+      <div id="new-discussion-block-content" >
         <paper-input label="Thread title here..." id="title"></paper-input>
         <div
           id="text"
@@ -96,7 +112,9 @@
           <template is="dom-if" if="{{viewRefer}}">
             <div class="refer-view">
               <b>Reference this term to:</b><br/>
-              <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
+              <template is="dom-if" if="{{isKorero(ui)}}">
+                <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
+              </template>
               <paper-input label="Put link to external PDF" id="external"></paper-input>
               <paper-button raised on-tap="link">Upload</paper-button><br/>
             </div>
@@ -127,18 +145,30 @@
         viewRefer: {
           type: Boolean,
           value: false
-        }
+        },
+        videoid: String,
+        ui: String
       },
 
       behaviors: [
         Polymer.UtilsBehavior
       ],
 
+      timeToString: function(time) {
+        return parseInt(time / 60, 10) + ':' + parseInt(time % 60, 10);
+      },
+
+      isKorero: function(ui) {
+        return ui === 'korero';
+      },
+
       newDiscussion: function() {
         this.discussion = {
           title: '',
           text: '',
-          nodes: {}
+          nodes: {},
+          videolink: false,
+          ui: this.ui
         };
         this.$$('#title').value = '';
         this.$$('#text').innerHTML = '';
@@ -237,16 +267,28 @@
       link: function(e) {
         this.referViewerPdf = null;
         this.fire('ready-edit-activity', {}, {bubbles: false});
-        PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
+        if (ui === 'korero') {
+          PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
           this.fire('edit-activity', {pdf: pdf, file: this.$$('#external').value}, {bubbles: false});
           this.$$('#external').value = '';
           this.$$('#options').setAttribute('style', `display: none`);
-        }.bind(this)).catch(function(err){
-          console.log(err);
-          this.$.toaster.show(err.message);
-        }.bind(this));
-        this.viewOptions = false;
-        this.viewRefer = true;
+          }.bind(this)).catch(function(err){
+            console.log(err);
+            this.$.toaster.show(err.message);
+          }.bind(this));
+          this.viewOptions = false;
+          this.viewRefer = true;
+        } else {
+          this.$$('#options').setAttribute('style', `display: none`);
+          var nodeId = this.node.getAttribute('data-node-id');
+          var referId = null;
+          do {
+            referId = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 10});
+          } while (this.discussion.nodes[nodeId].refers[referId]);
+          // console.log(data);
+          this.discussion.nodes[nodeId].refers[referId] = data;
+        }
+
       },
 
       linkvideo: function(e) {
@@ -327,12 +369,38 @@
         this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true}, {bubbles: false})
       },
 
+      changeDiscussionTime: function(data) {
+        console.log(data);
+        if (data.discussionstart != undefined || data.discussionstart != null) {
+          this.set('discussion.videolink', true);
+          // this.discussion.videolink = true
+        } else {
+          this.set('discussion.videolink', false);
+          // this.discussion.videolink = false
+        }
+        this.set('discussion.start', data.discussionstart);
+        this.set('discussion.end', data.discussionend);
+        // this.discussion.start = data.discussionstart;
+        // this.discussion.end = data.discussionend;
+        console.log(this.discussion)
+      },
+
       cancel: function() {
         this.fire('cancel-discussion', {}, {bubbles: false});
       },
 
-      save: function() {
-        this.fire('save-discussion', {}, {bubbles: false});
+      post: function() {
+        this.set('discussion.title', this.$$('#title').value);
+        this.set('discussion.text', this.$$('#text').innerHTML);
+        this.set('discussion.user', this.user.uid)
+        var ref = this.discussion.videolink ? 'korero/' + this.videoid + "/specifics/specifics-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20}) :
+          'korero/' + this.videoid + "/discussion/discussion-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20})
+        firebase.database().ref(ref).set(this.discussion).then(function(){
+          this.$.toaster.show('Saved');
+          this.fire('save-discussion', {}, {bubbles: false});
+        }.bind(this)).catch(function(err){
+          this.$.toaster.show(err.message);
+        }.bind(this));
       }
     })
   </script>

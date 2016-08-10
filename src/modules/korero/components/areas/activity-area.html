@@ -49,6 +49,7 @@
             videoend="{{videoEnd}}"
             on-save-linking="_saveLinking"
             on-cancel-linking="_cancelLinking"
+            on-change-discussion-time="_changeDiscussionTime"
           ></video-block>
         </div>
         <div class="flex">
@@ -120,6 +121,15 @@
           type: Number,
           notify: true
         }
+      },
+      newDiscussion: function() {
+        this.$$('#video-block').newDiscussion();
+      },
+      closeDiscussion: function() {
+        this.$$('#video-block').closeDiscussion();
+      },
+      _changeDiscussionTime: function(e) {
+        this.fire('change-discussion-time', e.detail, {bubbles: false});
       },
       openEditActivity: function() {
         this.viewEditActivity = true

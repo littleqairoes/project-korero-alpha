@@ -130,6 +130,9 @@
         },
         discussionid: {
           type: String
+        },
+        user: {
+          type: Object
         }
       },
 
@@ -140,7 +143,8 @@
       newComment: function() {
         this.discussion = {
           text: '',
-          nodes: {}
+          nodes: {},
+          ui: this.ui
         };
         this.$$('#text').innerHTML = '';
         this.$$('#options').setAttribute('style', 'display: none');
@@ -332,8 +336,18 @@
         this.fire('cancel-comment', {}, {bubbles: false});
       },
 
-      save: function() {
-        this.fire('save-comment', {}, {bubbles: false});
+      post: function() {
+        // this.set('discussion.title', this.$$('#title').value);
+        this.set('discussion.text', this.$$('#text').innerHTML);
+        this.set('discussion.user', this.user.uid);
+        var ref = '/korero/' + this.videoid + "/comments/" + this.discussionid + "/comment-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20})
+
+        firebase.database().ref(ref).set(this.discussion).then(function(){
+          this.$.toaster.show('Saved');
+          this.fire('save-comment', {}, {bubbles: false});
+        }.bind(this)).catch(function(err){
+          this.$.toaster.show(err.message);
+        }.bind(this));
       }
     })
   </script>

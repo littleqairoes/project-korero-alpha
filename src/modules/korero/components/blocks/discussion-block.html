@@ -37,9 +37,9 @@
     </style>
 
     <firebase-query
-      id="query"
+      id="commentquery"
       path="/korero/[[videoid]]/comments/[[discussion.$key]]"
-      data="{{comments}}">
+      data="{{commentdata}}">
     </firebase-query>
 
     <paper-material>
@@ -59,6 +59,8 @@
       <template is="dom-if" if="{{viewNewCommentBlock}}">
         <new-comment-block
           id="new-comment-block"
+          ui="[[ui]]"
+          videoid="[[videoid]]"
           discussionid = "[[discussion.$key]]"
           on-ready-edit-comment-activity="_readyEditActivity"
           on-edit-comment-activity="_editActivity"
@@ -70,13 +72,16 @@
           on-close-edit-activity="_closeEditActivity"
           on-start-comment-linking="_startCommentLinking"
           on-cancel-comment="_cancelComment"
+          on-save-comment="_saveComment"
+          user="[[user]]"
         ></new-comment-block>
       </template>
 
       <div class="comments">
-        <template is="dom-repeat" items="{{comments}}">
+        <template is="dom-repeat" items="{{commentdata}}">
           <comment-block
             comment="{{item}}"
+            ui="[[ui]]"
             on-mouseover-node="_openThumbnailBlock"
             on-mouseout-node="_mouseoutNode"
             on-tap-node="_openThumbnailBlock"
@@ -99,13 +104,25 @@
         viewNewCommentBlock: {
           type: Boolean,
           value: false
+        },
+        ui: {
+          type: String
+        },
+        comments: {
+          type: Object,
         }
       },
       observers: [
-        '_renderDiscussionText(discussion.text)'
+        '_renderDiscussionText(discussion.text)',
+        'check(comments.*)'
       ],
       _renderDiscussion: function(data) {
         console.log(data);
+      },
+      check: function(e) {
+        console.log(e)
+        console.log(this.$.commentquery.data)
+        console.log(this.comments)
       },
       _renderDiscussionText: function(text) {
         var el = this.$$('#discussion-text');
@@ -123,18 +140,30 @@
 
       },
       _mouseoverNode: function(e) {
-        var nodeId = e.target.getAttribute('data-node-id');
-        var node = this.discussion.nodes[nodeId];
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
+        if (this.ui === 'korero') {
+          var nodeId = e.target.getAttribute('data-node-id');
+          var node = this.discussion.nodes[nodeId];
+          this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
+        }
       },
       _mouseoutNode: function(e) {
         this.fire('mouseout-node', {}, {bubbles: false});
       },
       _tapNode: function(e) {
-        this.fire('close-edit-activity', {}, {bubbles: false});
-        var nodeId = e.target.getAttribute('data-node-id');
-        var node = this.discussion.nodes[nodeId];
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
+        if (this.ui === 'korero') {
+          this.fire('close-edit-activity', {}, {bubbles: false});
+          var nodeId = e.target.getAttribute('data-node-id');
+          var node = this.discussion.nodes[nodeId];
+          this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
+        } else {
+          for (var i in node.refers) {
+            if (node.refers[i].file) {
+              window.open(node.refers[i].file);
+              return;
+            }
+          }
+        }
+
       },
       _readyEditActivity: function() {
         this.fire('ready-edit-comment-activity', {}, {bubbles: false});
@@ -178,6 +207,9 @@
       },
       _cancelComment: function() {
         this.viewNewCommentBlock = false;
+      },
+      _saveComment: function() {
+        this._cancelComment();
       }
     })
   </script>

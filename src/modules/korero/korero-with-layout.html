@@ -2,8 +2,7 @@
 <link rel="import" href="../../../bower_components/app-route/app-route.html">
 <link rel="import" href="../../configs/behaviors/module-behavior.html">
 <link rel="import" href="../layout/main-layout.html">
-<link rel="import" href="pages/korero.html">
-<link rel="import" href="pages/korero-viewer.html">
+
 
 <dom-module id="korero-with-layout">
   <template>
@@ -30,7 +29,8 @@
       user="{{user}}"
       >
       <!--<korero-interface name="korero" route="[[subroute]]"></korero-interface>-->
-      <korero-viewer name="korero" route="[[subroute]]" user="{{user}}"></korero-viewer>
+      <korero-viewer name="korero" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></korero-viewer>
+      <adi-viewer name="adi" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></adi-viewer>
     </main-layout>
     <!-- Put template ends here -->
 
@@ -47,8 +47,18 @@
       ],
 
       _moduleDataChanged(page) {
+        console.log(this.moduleRoute);
+        console.log(page)
         this.page = page || 'korero';
       },
+
+      _pageChanged: function(page) {
+        // load minimodule import on demand.
+
+        // if (page === 'korero')
+        this.importHref(
+          this.resolveUrl(`pages/${page}-viewer.html`), null, null, true);
+      }
 
     });
   </script>

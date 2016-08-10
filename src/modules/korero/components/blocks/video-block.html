@@ -33,6 +33,15 @@
         opacity: 0.5;
       }
 
+      :host #discussion-play-time {
+        height: 5px;
+        position: absolute;
+        background-color: green;
+        width: 0px;
+        top: 0px;
+        opacity: 0.5;
+      }
+
       :host #video-content {
         min-width: 320px;
       }
@@ -72,6 +81,7 @@
             >
               <div id="video-play-time"></div>
               <div id="linking-play-time"></div>
+              <div id="discussion-play-time"></div>
             </div>
             <div class="" style="margin: 8px; width: 50px; text-align: center">
               {{videoShowTime}}
@@ -174,7 +184,23 @@
             this.linkVideoEnd = time;
           }
           this.changeLinkVideoTime();
-          this.$$('#video-content').seekTo(this.linkVideoStart)
+          this.$$('#video-content').seekTo(this.linkVideoStart);
+
+        } else if (this.discussionlink) {
+          console.log(this.discussionstart)
+          if (this.discussionstart != undefined || this.discussionstart != null) {
+            if (time <= this.discussionstart + (((this.discussionend - this.discussionstart) / 2))) {
+              this.discussionstart = time;
+            } else {
+              this.discussionend = time;
+            }
+          } else {
+            this.discussionstart = this.videotime;
+            this.discussionend = this.discussionstart + (this.videoduration * 0.05);
+          }
+          this.changeDiscussionTime();
+          this.$$('#video-content').seekTo(this.discussionstart);
+
         } else {
           this.$$('#video-content').seekTo(this.videoduration != 1 ? this.videoduration * scrubPos : 0);
           this.changeVideoTime(time);
@@ -193,6 +219,16 @@
         if (this.linking) {
           if (time >= this.linkVideoEnd) {
             this.pause();
+          } else if (time < this.linkVideoStart) {
+            this.$$('#video-content').seekTo(this.linkVideoStart);
+            this.play();
+          }
+        } else if (this.discussionlink) {
+          if (time >= this.discussionend) {
+            this.pause();
+          } else if (time < this.discussionstart) {
+            this.$$('#video-content').seekTo(this.discussionstart);
+            this.play();
           }
         }
       },
@@ -200,6 +236,27 @@
       changeLinkVideoTime: function() {
         var elPlayTime = this.$$('#linking-play-time');
         elPlayTime.setAttribute('style', `left: ${(this.linkVideoStart/this.videoduration)*100}%; width: ${((this.linkVideoEnd - this.linkVideoStart)/this.videoduration)*100}%`);
+      },
+
+      changeDiscussionTime: function() {
+        var elPlayTime = this.$$('#discussion-play-time');
+        elPlayTime.setAttribute('style', `left: ${(this.discussionstart/this.videoduration)*100}%; width: ${((this.discussionend - this.discussionstart)/this.videoduration)*100}%`);
+        this.fire('change-discussion-time', {discussionstart: this.discussionstart, discussionend: this.discussionend});
+      },
+
+      newDiscussion: function() {
+        this.pause();
+        this.discussionlink = true;
+        this.discussionstart = null;
+        this.discussionend = null;
+      },
+
+      closeDiscussion: function() {
+        this.discussionlink = false;
+        this.discussionstart = null;
+        this.discussionend = null;
+        var elPlayTime = this.$$('#discussion-play-time');
+        elPlayTime.setAttribute('style', `left: 0; width: 0%`);
       },
 
       startLinking: function(data) {
