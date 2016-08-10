@@ -1,8 +1,9 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-<link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
+<script src="../../../../../bower_components/fabric.js/dist/fabric.js"></script>
 
 <dom-module id="edit-document-comment-block">
   <template>
@@ -30,6 +31,8 @@
       :host .edit-activity-bottom-div {
         position: fixed;
         bottom: 0px;
+        width: 100%;
+        background-color: #FFF;
       }
 
       :host #back-canvas {
@@ -51,17 +54,27 @@
       </paper-icon-button>
       <div class="edit-activity-bottom-div horizontal layout">
         <div class="flex"></div>
-        <paper-icon-button
-          id="edit-activity-ok"
-          icon="icons:check"
-          on-tap="saveCommentActivity"
-        ></paper-icon-button>
-        <paper-icon-button
-          id="edit-activity-cancel"
-          icon="icons:close"
-          on-tap="cancelCommentActivity"
-        ></paper-icon-button>
-        <div class="flex"></div>
+        <div class="flex">
+          <div class="horizontal layout">
+            <div class="flex"></div>
+            <paper-button
+              id="edit-activity-ok"
+              icon="icons:check"
+              on-tap="saveCommentActivity"
+            >
+              Save
+            </paper-button>
+            <paper-button
+              id="edit-activity-cancel"
+              icon="icons:close"
+              on-tap="cancelCommentActivity"
+            >
+              Cancel
+            </paper-button>
+            <div class="flex"></div>
+          </div>
+        </div>
+        <div class="flex-3"></div>
       </div>
     </div>
   </template>

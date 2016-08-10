@@ -15,6 +15,7 @@
       :host #discussion-area-content {
         position: relative;
         width: 100%;
+        overflow-y: auto;
       }
 
       :host .thumbnails-block-container {
@@ -75,7 +76,7 @@
         </template>
         <h3>Global Discussions</h3>
         <template is="dom-repeat" items="{{discussions}}">
-          <!--<template is="dom-if" if="{{checkUI(item.ui)}}">-->
+          <template is="dom-if" if="{{checkUI(item.ui)}}">
             <discussion-block
               class="discussion-block"
               id="discussion-{{item.$key}}"
@@ -91,13 +92,14 @@
               on-edit-comment-activity="_editCommentActivity"
               on-open-thumbnail-block="_openThumbnailBlock"
               on-start-comment-linking="_startLinking"
+
               user="[[user]]"
             ></discussion-block>
-          <!--</template>-->
+          </template>
         </template>
         <h3>Specific Discussions</h3>
         <template is="dom-repeat" items="{{specifics}}">
-          <!--<template is="dom-if" if="{{checkUI(item.ui)}}">-->
+          <template is="dom-if" if="{{checkUI(item.ui)}}">
             <discussion-block
               class="discussion-block"
               id="discussion-{{item.$key}}"
@@ -113,9 +115,11 @@
               on-edit-comment-activity="_editCommentActivity"
               on-open-thumbnail-block="_openThumbnailBlock"
               on-start-comment-linking="_startLinking"
+              on-play-specific="_playSpecific"
               user="[[user]]"
+
             ></discussion-block>
-          <!--</template>-->
+          </template>
         </template>
         <paper-fab
           id="new-discussion-button"
@@ -182,11 +186,8 @@
         ui: {
           type: String
         },
-        filter: {
-          type: Object,
-          value: {
-            ui: 'korero'
-          }
+        user: {
+          type: Object
         }
       },
       // observers: [
@@ -196,8 +197,25 @@
       //   console.log(data)
       //   this.discussions
       // },
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+      _resize: function() {
+        this.$$('#discussion-area-content').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+      },
       checkUI: function(ui) {
         return this.ui === ui;
+      },
+      _playSpecific: function(e) {
+        this.fire('play-specific', e.detail, {bubbles: false})
       },
 
       _mouseoutNode: function() {
@@ -250,6 +268,8 @@
       _openEditorOptions: function() {
         if (this.viewNewDiscussionBlock) {
           this.$$('#new-discussion-block').referMore();
+        } else {
+          this.$$('.discussion-block').referMore();
         }
       },
       _tapNewDiscussion: function() {

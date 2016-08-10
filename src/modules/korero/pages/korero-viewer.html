@@ -60,6 +60,7 @@
           on-start-linking="_startLinking"
           on-tap-video="_tapVideo"
           on-mouseover-video="_mouseoverVideo"
+          on-play-specific="_playSpecific"
         ></discussion-area>
       </div>
     </div>
@@ -80,6 +81,9 @@
           type: Object
         },
         pageRoute: {
+          type: Object
+        },
+        user: {
           type: Object
         }
       },
@@ -178,6 +182,10 @@
       },
       _cancelLinking: function() {
         this.$$('#discussion-area').cancelLinking();
+      },
+
+      _playSpecific: function(e) {
+        this.$$('#activity-area').playSpecific(e.detail);
       }
     });
   </script>

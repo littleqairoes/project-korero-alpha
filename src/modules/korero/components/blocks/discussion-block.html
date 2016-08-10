@@ -34,6 +34,18 @@
       :host .comments {
         margin-left: 20px;
       }
+
+      :host .time {
+        padding-left: 10px;
+        padding-right: 10px;
+        cursor: pointer;
+        text-align: center;
+      }
+
+      :host .time:hover {
+        color: green;
+
+      }
     </style>
 
     <firebase-query
@@ -43,52 +55,68 @@
     </firebase-query>
 
     <paper-material>
-      <div id="discussion-block-content">
-        <h3 class="title" id="discussion-title">{{discussion.title}}</h3>
-        <hr>
-        <div class="text" id="discussion-text"></div>
-      </div>
-      <template is="dom-if" if="{{!viewNewCommentBlock}}">
-      <div class="">
-        <paper-button on-tap="reply">
-          Reply
-        </paper-button>
-      </div>
-      </template>
+      <div class="horizontal layout center">
+        <div class="time" on-tap="play">
+          <template is="dom-if" if="{{!discussion.videolink}}">
+            <iron-icon icon="icons:language"></iron-icon>
+          </template>
+          <template is="dom-if" if="{{discussion.videolink}}">
+            <iron-icon icon="icons:radio-button-checked"></iron-icon><br/>[[timeToString(discussion.start)]]
+          </template>
+        </div>
+        <div class="flex">
+          <div id="discussion-block-content">
+            <h3 class="title" id="discussion-title">{{discussion.title}}</h3>
+            <hr>
+            <div class="text" id="discussion-text"></div>
+          </div>
+          <template is="dom-if" if="{{!viewNewCommentBlock}}">
+          <div class="">
+            <paper-button on-tap="reply">
+              Reply
+            </paper-button>
+          </div>
+          </template>
 
-      <template is="dom-if" if="{{viewNewCommentBlock}}">
-        <new-comment-block
-          id="new-comment-block"
-          ui="[[ui]]"
-          videoid="[[videoid]]"
-          discussionid = "[[discussion.$key]]"
-          on-ready-edit-comment-activity="_readyEditActivity"
-          on-edit-comment-activity="_editActivity"
-          on-open-thumbnail-block="_openThumbnailBlock"
-          on-mouseover-node="_openThumbnailBlock"
-          on-mouseout-node="_mouseoutNode"
-          on-tap-node="_openThumbnailBlock"
-          on-close-thumbnail="_closeThumbnailBlock"
-          on-close-edit-activity="_closeEditActivity"
-          on-start-comment-linking="_startCommentLinking"
-          on-cancel-comment="_cancelComment"
-          on-save-comment="_saveComment"
-          user="[[user]]"
-        ></new-comment-block>
-      </template>
+          <template is="dom-if" if="{{viewNewCommentBlock}}">
+            <new-comment-block
+              id="new-comment-block"
+              ui="[[ui]]"
+              videoid="[[videoid]]"
+              discussionid = "[[discussion.$key]]"
+              on-ready-edit-comment-activity="_readyEditActivity"
+              on-edit-comment-activity="_editActivity"
+              on-open-thumbnail-block="_openThumbnailBlock"
+              on-mouseover-node="_openThumbnailBlock"
+              on-mouseout-node="_mouseoutNode"
+              on-tap-node="_openThumbnailBlock"
+              on-close-thumbnail="_closeThumbnailBlock"
+              on-close-edit-activity="_closeEditActivity"
+              on-start-comment-linking="_startCommentLinking"
+              on-cancel-comment="_cancelComment"
+              on-save-comment="_saveComment"
+              user="[[user]]"
+            ></new-comment-block>
+          </template>
 
-      <div class="comments">
-        <template is="dom-repeat" items="{{commentdata}}">
-          <comment-block
-            comment="{{item}}"
-            ui="[[ui]]"
-            on-mouseover-node="_openThumbnailBlock"
-            on-mouseout-node="_mouseoutNode"
-            on-tap-node="_openThumbnailBlock"
-            on-close-edit-activity="_closeEditActivity"
-          ></comment-block>
-        </template>
+          <div class="comments">
+            <template is="dom-repeat" items="{{commentdata}}">
+              <template is="dom-if" if="checkUI(item.ui)">
+                <comment-block
+                  comment="{{item}}"
+                  ui="[[ui]]"
+                  on-mouseover-node="_openThumbnailBlock"
+                  on-mouseout-node="_mouseoutNode"
+                  on-tap-node="_openThumbnailBlock"
+                  on-close-edit-activity="_closeEditActivity"
+                ></comment-block>
+              </template>
+
+            </template>
+          </div>
+        </div>
       </div>
+
 
     </paper-material>
   </template>
@@ -110,12 +138,24 @@
         },
         comments: {
           type: Object,
+        },
+        user: {
+          type: Object
         }
       },
       observers: [
         '_renderDiscussionText(discussion.text)',
         'check(comments.*)'
       ],
+      timeToString: function(time) {
+        return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
+      },
+      checkUI: function(ui) {
+        return this.ui === ui;
+      },
+      play: function() {
+        this.fire('play-specific', {videostart: this.discussion.start, videoend: this.discussion.end}, {bubbles: false})
+      },
       _renderDiscussion: function(data) {
         console.log(data);
       },
@@ -195,6 +235,11 @@
       closedThumbnailBlock: function() {
         if (this.viewNewCommentBlock) {
           this.$$('#new-comment-block').closedThumbnailBlock();
+        }
+      },
+      referMore() {
+        if (this.viewNewCommentBlock) {
+          this.$$('#new-comment-block').referMore();
         }
       },
       _startCommentLinking: function(e) {

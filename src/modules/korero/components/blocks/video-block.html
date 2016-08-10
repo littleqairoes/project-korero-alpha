@@ -3,6 +3,7 @@
 <link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
 
 <dom-module id="video-block">
@@ -22,6 +23,7 @@
         position: relative;
         background-color: red;
         width: 0px;
+        opacity: 0.5;
       }
 
       :host #linking-play-time {
@@ -42,6 +44,15 @@
         opacity: 0.5;
       }
 
+      :host #specific-play-time {
+        height: 5px;
+        position: absolute;
+        background-color: blue;
+        width: 0px;
+        top: 0px;
+        opacity: 0.7;
+      }
+
       :host #video-content {
         min-width: 320px;
       }
@@ -59,6 +70,7 @@
             video-id="[[videoid]]"
             chromeless
             on-google-youtube-ready="videoReady"
+            on-google-youtube-state-change="stateChange"
             currenttime="{{videotime}}"
             duration="{{videoduration}}"
             currenttimeformatted="{{videoShowTime}}">
@@ -82,6 +94,7 @@
               <div id="video-play-time"></div>
               <div id="linking-play-time"></div>
               <div id="discussion-play-time"></div>
+              <div id="specific-play-time"></div>
             </div>
             <div class="" style="margin: 8px; width: 50px; text-align: center">
               {{videoShowTime}}
@@ -91,16 +104,28 @@
             <div class="horizontal layout">
               <div class="flex"></div>
               <template is="dom-if" if="{{linkingEdit}}">
-              <paper-icon-button
-                id="linking-ok"
-                icon="icons:check"
-                on-tap="saveLinking"
-              ></paper-icon-button>
+                <paper-icon-button
+                  id="linking-ok"
+                  icon="icons:check"
+                  on-tap="saveLinking"
+                ></paper-icon-button>
               </template>
+
               <paper-icon-button
                 id="linking-cancel"
                 icon="icons:close"
                 on-tap="cancelLinking"
+              ></paper-icon-button>
+              <div class="flex"></div>
+            </div>
+          </template>
+          <template is="dom-if" if="{{playspecific}}">
+            <div class="horizontal layout">
+              <div class="flex"></div>
+              <paper-icon-button
+                id="specific-cancel"
+                icon="icons:close"
+                on-tap="cancelSpecific"
               ></paper-icon-button>
               <div class="flex"></div>
             </div>
@@ -142,6 +167,9 @@
         linkVideoEnd: {
           type: Number
         },
+        playspecific: {
+          type: Boolean
+        }
       },
 
       behaviors: [
@@ -212,22 +240,39 @@
         this._resize();
       },
 
+      stateChange: function(e) {
+        console.log(e.detail)
+        if (e.detail.data === 1 && this.playspecific) {
+          this.changeSpecificTime();
+        }
+      },
+
       changeVideoTime: function(time) {
         console.log(time);
         var elPlayTime = this.$$('#video-play-time');
         elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
         if (this.linking) {
           if (time >= this.linkVideoEnd) {
-            this.pause();
+            this.$$('#video-content').seekTo(this.linkVideoStart);
+            this.play();
           } else if (time < this.linkVideoStart) {
             this.$$('#video-content').seekTo(this.linkVideoStart);
             this.play();
           }
         } else if (this.discussionlink) {
           if (time >= this.discussionend) {
-            this.pause();
+            this.$$('#video-content').seekTo(this.discussionstart);
+            this.play();
           } else if (time < this.discussionstart) {
             this.$$('#video-content').seekTo(this.discussionstart);
+            this.play();
+          }
+        } else if (this.playspecific) {
+          if (time >= this.playend) {
+            this.$$('#video-content').seekTo(this.playstart);
+            this.play();
+          } else if (time < this.playstart) {
+            this.$$('#video-content').seekTo(this.playstart);
             this.play();
           }
         }
@@ -244,6 +289,11 @@
         this.fire('change-discussion-time', {discussionstart: this.discussionstart, discussionend: this.discussionend});
       },
 
+      changeSpecificTime: function() {
+        var elPlayTime = this.$$('#specific-play-time');
+        elPlayTime.setAttribute('style', `left: ${(this.playstart/this.videoduration)*100}%; width: ${((this.playend - this.playstart)/this.videoduration)*100}%`);
+      },
+
       newDiscussion: function() {
         this.pause();
         this.discussionlink = true;
@@ -257,6 +307,30 @@
         this.discussionend = null;
         var elPlayTime = this.$$('#discussion-play-time');
         elPlayTime.setAttribute('style', `left: 0; width: 0%`);
+      },
+
+      playSpecific: function(data) {
+        if (data.videostart != undefined || data.videostart != null) {
+          this.$$('#video-content').seekTo(data.videostart);
+          this.playspecific = true;
+          this.playstart = data.videostart;
+          this.playend = data.videoend;
+          this.changeSpecificTime();
+        } else {
+          this.playspecific = false;
+          this.playstart = null
+          this.playend = null
+          var elPlayTime = this.$$('#specific-play-time');
+          elPlayTime.setAttribute('style', `left: 0; width: 0`);
+        }
+      },
+
+      cancelSpecific: function() {
+        this.playspecific = false;
+        this.playstart = null
+        this.playend = null
+        var elPlayTime = this.$$('#specific-play-time');
+        elPlayTime.setAttribute('style', `left: 0; width: 0`);
       },
 
       startLinking: function(data) {
@@ -280,7 +354,11 @@
       },
 
       saveLinking: function() {
-        this.fire('save-linking', {videostart: this.linkVideoStart, videoend: this.linkVideoEnd, video: this.videoid, discussionid: this.discussionid}, {bubbles: false});
+        var obj = {videostart: this.linkVideoStart, videoend: this.linkVideoEnd, video: this.videoid}
+        if (this.discussionid) {
+          obj.discussionid = this.discussionid
+        }
+        this.fire('save-linking', obj, {bubbles: false});
         this.resetLinking();
         this.linking = false
       },

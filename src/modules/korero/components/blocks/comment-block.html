@@ -70,7 +70,7 @@
       },
       _mouseoverNode: function(e) {
         var nodeId = e.target.getAttribute('data-node-id');
-        var node = this.discussion.nodes[nodeId];
+        var node = this.comment.nodes[nodeId];
         this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
       },
       _mouseoutNode: function(e) {
@@ -79,7 +79,7 @@
       _tapNode: function(e) {
         this.fire('close-edit-activity', {}, {bubbles: false});
         var nodeId = e.target.getAttribute('data-node-id');
-        var node = this.discussion.nodes[nodeId];
+        var node = this.comment.nodes[nodeId];
         this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
       }
     })

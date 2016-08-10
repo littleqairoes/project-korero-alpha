@@ -247,6 +247,9 @@
         this.fire('cancel-linking', {}, {bubbles: false});
       },
 
+      playSpecific: function(e) {
+        this.$$('#video-block').playSpecific(e);
+      }
 
     })
   </script>
