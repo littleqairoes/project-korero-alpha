@@ -16,6 +16,7 @@
         position: relative;
         width: inherit;
         overflow-y: auto;
+        background-color: #fff;
       }
       :host #page-left-button {
         position: absolute;
@@ -39,9 +40,27 @@
         position: absolute;
         top: 0;
       }
+
+      :host .loader-content {
+        position: absolute;
+        width: 100%;
+        top: 100px;
+      }
+
+      :host #spinner {
+        width: 200px;
+        height: 200px;
+      }
     </style>
 
     <div class="edit-activity" id="edit-activity">
+      <div class="loader-content horizontal layout">
+        <div class="flex"></div>
+        <div>
+          <paper-spinner id="spinner" active></paper-spinner>
+        </div>
+        <div class="flex"></div>
+      </div>
       <paper-icon-button
         id="page-left-button"
         icon="hardware:keyboard-arrow-left"

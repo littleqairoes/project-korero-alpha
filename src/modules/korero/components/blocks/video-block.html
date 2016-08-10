@@ -215,7 +215,6 @@
           this.$$('#video-content').seekTo(this.linkVideoStart);
 
         } else if (this.discussionlink) {
-          console.log(this.discussionstart)
           if (this.discussionstart != undefined || this.discussionstart != null) {
             if (time <= this.discussionstart + (((this.discussionend - this.discussionstart) / 2))) {
               this.discussionstart = time;
@@ -241,14 +240,12 @@
       },
 
       stateChange: function(e) {
-        console.log(e.detail)
         if (e.detail.data === 1 && this.playspecific) {
           this.changeSpecificTime();
         }
       },
 
       changeVideoTime: function(time) {
-        console.log(time);
         var elPlayTime = this.$$('#video-play-time');
         elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
         if (this.linking) {

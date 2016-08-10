@@ -117,7 +117,6 @@
               on-start-comment-linking="_startLinking"
               on-play-specific="_playSpecific"
               user="[[user]]"
-
             ></discussion-block>
           </template>
         </template>
@@ -224,10 +223,11 @@
         }
       },
       _openThumbnailBlock: function(e) {
+        console.log(e.detail)
         this.viewThumbnailBlock = true;
         this.permanentThumbnailBlock = e.detail.open;
         setTimeout(function(){
-          this.$$('#thumbnails-block').setNode(e.detail.node, e.detail.text, e.detail.newDiscussion, e.detail.open);
+          this.$$('#thumbnails-block').setNode(e.detail.node, e.detail.text, e.detail.newDiscussion, e.detail.open, e.detail.discussionid);
         }.bind(this), 100);
       },
       _mouseoverThumbnail: function(e) {
@@ -252,7 +252,7 @@
       _closeThumbnailBlock: function() {
         this.$$('#thumbnails-block').setPrevious();
       },
-      _permanentCloseThumbnailBlock: function() {
+      _permanentCloseThumbnailBlock: function(e) {
         if (this.viewThumbnailBlock) {
           this.$$('#thumbnails-block').setNode();
           this.viewThumbnailBlock = false;
@@ -260,16 +260,20 @@
         if (this.viewNewDiscussionBlock) {
           this.$$('#new-discussion-block').closedThumbnailBlock();
         }
-        this.$$('.discussion-block').closedThumbnailBlock();
+        console.log(e.detail)
+        if (e.detail.discussionid) {
+          this.$$('#discussion-'+e.detail.discussionid).closedThumbnailBlock();
+        }
+
       },
       _removeThumbnailBlock: function() {
         this.viewThumbnailBlock = false;
       },
-      _openEditorOptions: function() {
+      _openEditorOptions: function(e) {
         if (this.viewNewDiscussionBlock) {
           this.$$('#new-discussion-block').referMore();
-        } else {
-          this.$$('.discussion-block').referMore();
+        } else if (e.detail.discussionid) {
+          this.$$('#discussion-'+e.detail.discussionid).referMore();
         }
       },
       _tapNewDiscussion: function() {

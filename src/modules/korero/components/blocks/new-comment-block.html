@@ -267,7 +267,7 @@
         } while (this.discussion.nodes[nodeId].refers[referId]);
         // console.log(data);
         this.discussion.nodes[nodeId].refers[referId] = data;
-        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true}, {bubbles: false})
+        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true, discussionid: this.discussionid}, {bubbles: false})
       },
 
       closedThumbnailBlock: function() {
@@ -323,7 +323,8 @@
             root: data
           }
         };
-        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true}, {bubbles: false})
+        console.log(this.discussionid)
+        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true, discussionid: this.discussionid}, {bubbles: false})
       },
 
       linkvideo: function() {

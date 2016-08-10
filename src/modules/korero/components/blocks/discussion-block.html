@@ -209,9 +209,9 @@
         this.fire('ready-edit-comment-activity', {}, {bubbles: false});
       },
       _editActivity: function(e) {
-        if (e.model) {
-          this.fire('edit-comment-activity', e.detail, {bubbles: false});
-        }
+        // if (e.model) {
+        //   this.fire('edit-comment-activity', e.detail, {bubbles: false});
+        // }
       },
       _closeEditActivity: function() {
         this.fire('close-edit-comment-activity', {}, {bubbles: false});
@@ -230,6 +230,7 @@
 
       },
       _openThumbnailBlock: function(e) {
+        console.log(e.detail)
         this.fire('open-thumbnail-block', e.detail, {bubbles: false});
       },
       closedThumbnailBlock: function() {

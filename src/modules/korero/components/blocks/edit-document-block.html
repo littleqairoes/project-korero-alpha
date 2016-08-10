@@ -1,6 +1,7 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
 <script src="../../../../../fabric.js/fabric.js"></script>
@@ -16,6 +17,7 @@
         position: relative;
         width: inherit;
         overflow-y: auto;
+        background-color: #fff;
       }
       :host #page-left-button {
         position: absolute;
@@ -39,9 +41,27 @@
         position: absolute;
         top: 0;
       }
+      :host .loader-content {
+        position: absolute;
+        width: 100%;
+        top: 50px;
+      }
+
+      :host #spinner {
+        width: 200px;
+        height: 200px;
+      }
     </style>
 
     <div class="edit-activity" id="edit-activity">
+      <div class="loader-content horizontal layout">
+        <div class="flex"></div>
+        <div>
+          <paper-spinner id="spinner" active></paper-spinner>
+        </div>
+        <div class="flex"></div>
+      </div>
+
       <paper-icon-button
         id="page-left-button"
         icon="hardware:keyboard-arrow-left"

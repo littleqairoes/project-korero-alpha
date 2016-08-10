@@ -134,13 +134,16 @@
         },
         previousnode: {
           type: Object
-        }
+        },
+        discussionid: String,
+        prevdiscid: String
       },
       setPrevious: function() {
         if (this.permanent) {
           this.hover = this.permanent;
           this.text = this.previoustext
           this.editor = this.previousNewDiscussion
+          this.discussionid = this.prevdiscid
           this.boxes = [];
           for (var i in this.previousboxes) {
             this.push('boxes', this.previousboxes[i]);
@@ -163,12 +166,13 @@
           this.setNode();
         }
       },
-      setNode: function(node, text, newDiscussion, p) {
+      setNode: function(node, text, newDiscussion, p, discussionid) {
         this.text = text;
         this.boxes = [];
         this.hover = p;
         this.editor = newDiscussion;
         this.node = node;
+        this.discussionid = discussionid;
         console.log(node);
 
         if (node) {
@@ -197,6 +201,7 @@
             this.previoustext = text;
             this.previousNewDiscussion = newDiscussion;
             this.permanent = p;
+            this.prevdiscid = discussionid
             for (var k in this.boxes) {
               this.push('previousboxes', {
                 referId: this.boxes[k].referId,
@@ -268,10 +273,10 @@
       },
       _closeThumbnailsBlock: function(e) {
         this.permanent = false;
-        this.fire('close-thumbnails-block', {}, {bubbles: false});
+        this.fire('close-thumbnails-block', {discussionid: this.discussionid}, {bubbles: false});
       },
       _openEditorOptions: function() {
-        this.fire('open-editor-options', {}, {bubbles: false});
+        this.fire('open-editor-options', {discussionid: this.discussionid}, {bubbles: false});
       }
     })
   </script>
