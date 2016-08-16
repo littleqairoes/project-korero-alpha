@@ -68,7 +68,7 @@
       data="{{commentdata}}">
     </firebase-query>
 
-    <paper-material on-mouseout="_mouseoutNode">
+    <paper-material >
       <div class="horizontal layout center" >
         <div class="time" on-tap="play">
           <template is="dom-if" if="{{!discussion.videolink}}">
@@ -143,6 +143,7 @@
         <thumbnails-block
           id="thumbnails-block"
           on-close-thumbnails-block="_mouseoutNode"
+          on-mouseout="_mouseoutNode"
           >
         </thumbnails-block>
       </template>
@@ -187,9 +188,9 @@
         '_renderDiscussionText(discussion.text)',
         'check(comments.*)'
       ],
-      listeners: [
-        'mouseout', '_mouseoutNode'
-      ],
+      listeners: {
+        'mouseout': '_mouseoutNode'
+      },
       showDate: function(utc) {
         if (utc) {
           return new Date(utc);
@@ -274,7 +275,7 @@
             // var nodeId = nodes[i].getAttribute('data-node-id');
             var node = nodes[i];
             node.addEventListener('mouseover', this._mouseoverNode.bind(this));
-            node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+            // node.addEventListener('mouseout', this._mouseoutNode.bind(this));
             node.addEventListener('tap', this._tapNode.bind(this));
           }
 
@@ -312,6 +313,7 @@
       },
 
       _mouseoutNode: function(e) {
+        console.log(e)
         if (this.viewThumbnailBlock) {
           this.$$('#thumbnails-block').setNode();
         }

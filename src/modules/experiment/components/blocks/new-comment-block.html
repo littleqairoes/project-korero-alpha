@@ -129,6 +129,7 @@
     <template is="dom-if" if="{{viewThumbnailBlock}}">
       <thumbnails-block
         id="thumbnails-block"
+        on-close-thumbnails-block="_mouseoutNode"
         >
       </thumbnails-block>
     </template>
@@ -177,6 +178,10 @@
       behaviors: [
         Polymer.UtilsBehavior
       ],
+
+      listeners: {
+        'mouseout': '_mouseoutNode'
+      },
 
       isKorero: function(ui) {
         return ui === 'korero';
@@ -376,7 +381,7 @@
           if (flag) {
             this.node.classList = ['hover'];
             this.node.addEventListener('mouseover', this._mouseoverNode.bind(this));
-            this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+            // this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
             this.node.addEventListener('tap', this._tapNode.bind(this));
             this.node = null;
           }

@@ -65,7 +65,7 @@
       }
     </style>
 
-    <paper-material on-mouseout="_mouseoutNode">
+    <paper-material>
       <template is="dom-if" if="{{comment.videolink}}">
         <div class="time" on-tap="play">
           Commenting on: [[timeToString(comment.start)]]
@@ -104,9 +104,9 @@
           value: false
         }
       },
-      listeners: [
-        'mouseout', '_mouseoutNode'
-      ],
+      listeners: {
+        'mouseout': '_mouseoutNode'
+      },
       observers: [
         '_renderText(comment.text)'
       ],
@@ -173,7 +173,7 @@
             // var nodeId = nodes[i].getAttribute('data-node-id');
             var node = nodes[i];
             node.addEventListener('mouseover', this._mouseoverNode.bind(this));
-            node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+            // node.addEventListener('mouseout', this._mouseoutNode.bind(this));
             node.addEventListener('tap', this._tapNode.bind(this));
           }
 
