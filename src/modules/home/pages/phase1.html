@@ -30,7 +30,25 @@
         font-size: 1.25em;
       }
 
-      :host .pdf-segement {
+      :host .sub-instruction a {
+        font-size: 0.8em;
+        word-break: break-all;
+      }
+
+      :host .buttons {
+        margin: 10px;
+        margin-top: 30px;
+        text-align: center;
+        font-size: 1.25em;
+
+      }
+
+      :host .buttons a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      :host .pdf-segement, .video-segment {
         max-width: 400px;
       }
     </style>
@@ -95,12 +113,18 @@
                     <div class="sub-instruction">
                       {{item.instruction}}
                     </div>
-                    <home-video-block videoid="[[item.video]]"></home-video-block>
+                    <home-video-block videoid="[[materialValue]]" link-video-start="[[item.start]]" link-video-end="[[item.end]]"></home-video-block>
                   </template>
                   <template is="dom-if" if="{{_isForum(seqObject.interface)}}">
                     <div class="sub-instruction">
                       Video Link:<br/>
-                      <a href="/korero/video/{{materialValue}}/" target="_blank">{{getHostname()}}/korero/video/{{materialValue}}/</a>
+                      <a href="/experiment/video/{{materialValue}}/" target="_blank">{{getHostname()}}/experiment/video/{{materialValue}}/</a>
+                    </div>
+                  </template>
+                  <template is="dom-if" if="{{!_isForum(seqObject.interface)}}">
+                    <div class="sub-instruction">
+                      Video Link:<br/>
+                      Included in the Interface
                     </div>
                   </template>
                 </div>
@@ -115,6 +139,9 @@
                     <home-pdf-block file="[[item.pdf]]"></home-pdf-block>
                   </div>
                   <div class="sub-instruction">
+                    [[getSubInstruction(item)]]
+                  </div>
+                  <div class="sub-instruction">
                     PDF Link:<br/>
                     <a href="[[item.pdf]]" target="_blank">[[item.pdf]]</a>
                   </div>
@@ -123,11 +150,13 @@
             </div>
             <div class="horizontal layout center">
               <div class="flex"></div>
-                <div class="sub-instruction">
-                  <a href="/experiment/[[seqObject.interface]]/[[materialValue]]/[[task]]" target="interface">Open Interface</a>
+                <div class="buttons">
+                  <a href="/experiment/[[seqObject.interface]]/[[materialValue]]/[[task]]" target="interface">
+                    <paper-button raised>Open Interface</paper-button>
+                  </a>
                 </div>
-                <div class="sub-instruction">
-                  <paper-button on-tap="next">Next</paper-button>
+                <div class="buttons">
+                  <paper-button on-tap="next" raised>Next</paper-button>
                 </div>
               <div class="flex"></div>
             </div>
@@ -144,7 +173,7 @@
       <p>
         After answering, please click next for the next part
       </p>
-      <paper-button on-tap="doneBlock">Next</paper-button>
+      <paper-button on-tap="doneBlock" raised>Next</paper-button>
     </paper-dialog>
   </template>
   <script>
@@ -213,6 +242,10 @@
         '_blockDataChanged(blockData.blockNumber)',
         '_seqDataChanged(seqData.seqNumber)',
       ],
+
+      getSubInstruction: function(item) {
+        return item['sub-instruction'];
+      },
 
       _check: function(e) {
         console.log(e)
