@@ -269,10 +269,10 @@
           if (obj.segments) {
             for (var i in obj.segments) {
               var segment = obj.segments[i];
-              if (segment.video) {
-                this.push('videoSegments', segment)
-              } else if (segment.pdf) {
+              if (segment.pdf) {
                 this.push('pdfSegments', segment)
+              } else {
+                this.push('videoSegments', segment)
               }
             }
           }
