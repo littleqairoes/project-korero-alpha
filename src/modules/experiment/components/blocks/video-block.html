@@ -8,6 +8,7 @@
 <link rel="import" href="../../../../../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
 <link rel="import" href="../../../../configs/behaviors/utils-behavior.html">
+<script src="../../../../../bower_components/underscore/underscore.js"></script>
 
 <dom-module id="video-block">
   <template>
@@ -93,6 +94,10 @@
         top: -15px;
       }
 
+      :host #video-thumbnail {
+        position: absolute;
+        display: none;
+      }
 
     </style>
 
@@ -127,6 +132,8 @@
               on-track="scrub"
               id="video-scrubber-area"
             >
+
+
               <div id="video-play-time"></div>
               <template is="dom-if" if="{{checkGeneral(linkVideoStart, linkingEdit)}}">
                 <div id="linker-play-time"></div>
@@ -147,6 +154,15 @@
                   [[visualend]]
                 </div>
               </template>
+
+              <google-youtube
+                width="160px"
+                height="90px"
+                id="video-thumbnail"
+                video-id="[[videoid]]"
+                chromeless
+                on-google-youtube-ready="videoThumbnailReady">
+              </google-youtube>
             </div>
             <div class="" style="margin: 8px; width: 50px; text-align: center">
               {{videoShowTime}}
@@ -287,7 +303,13 @@
         var elRect = el.getBoundingClientRect();
         var scrubPos = (e.detail.x - elRect.left) / elRect.width
 
+        this.$$('#video-thumbnail').setAttribute('style', `display: block; left: ${scrubPos * 100}%; top: -90px`);
+
+
         var time = this.videoduration * scrubPos
+        this.$$('#video-thumbnail').seekTo(time);
+        this.$$('#video-thumbnail').play();
+
 
         if (this.linking) {
           if (this.linkVideoStart == null || this.linkVideoEnd == null) {
@@ -337,14 +359,25 @@
         } else {
           this.changeVideoTime(time);
           this.$$('#video-content').seekTo(this.videoduration != 1 ? this.videoduration * scrubPos : 0);
-
         }
+
+        this.closeThumbnailVideo();
       },
+
+      closeThumbnailVideo: _.debounce(function(){
+        this.$$('#video-thumbnail').pause();
+        this.$$('#video-thumbnail').setAttribute('style', 'display: none');
+      }, 1000),
 
       videoReady: function() {
         //var el = this.$$('#video-scrubber-area');
         this._resize();
         this.play();
+      },
+
+      videoThumbnailReady: function() {
+        this.$$('#video-thumbnail').play();
+        this.$$('#video-thumbnail').mute();
       },
 
       stateChange: function(e) {
