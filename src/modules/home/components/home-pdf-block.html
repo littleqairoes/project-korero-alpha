@@ -1,0 +1,110 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+<script src="../../../../bower_components/fabric.js/dist/fabric.js"></script>
+<script src="../js/pdf.js"></script>
+
+
+<dom-module id="home-pdf-block">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host {
+        width: 100%;
+      }
+
+      :host #show-activity {
+        position: relative;
+        width: inherit;
+      }
+
+    </style>
+
+    <div class="show-activity" id="show-activity">
+      <canvas id="back-canvas" width="500px"></canvas>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'home-pdf-block',
+      properties: {
+        boxes: {
+          type: Object,
+        },
+        editor: {
+          type: Boolean,
+          value: false
+        },
+        file: {
+          type: String,
+          observer: '_setPDF'
+        },
+        pdf: {
+          type: Object,
+
+        },
+        canvas: {
+          type: Object
+        },
+        page: {
+          type: Number,
+          value: 1,
+          observer: 'changedPage'
+        }
+      },
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+      _resize: function() {
+        // this.$$('#show-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+      },
+      _setPDF: function(pdf) {
+        PDFJS.getDocument(pdf).then(function(obj){
+          this.setDocument({pdf: obj});
+        }.bind(this));
+      },
+      setDocument: function(data) {
+        if (data.pdf) {
+          console.log('hello')
+          // this.$$('#show-activity').setAttribute('style', `height: ${this.windowSize().height - 64}px`);
+          this.pdf = data.pdf;
+          this.getPage(data.pdf, this.page);
+        }
+      },
+      getPage: function(pdf, number) {
+        pdf.getPage(number).then(function(page) {
+          // you can now use *page* here
+          var viewport = page.getViewport(1);
+          var scale = (this.$$('#show-activity').getBoundingClientRect().width - 10) / viewport.width;
+          var scaledViewport = page.getViewport(scale);
+
+          var canvas = this.$$('#back-canvas');
+          var context = canvas.getContext('2d');
+          canvas.height = scaledViewport.height;
+          canvas.width = scaledViewport.width;
+          var renderContext = {
+            canvasContext: context,
+            viewport: scaledViewport
+          };
+          page.render(renderContext);
+        }.bind(this));
+      },
+
+      changedPage: function(number) {
+        if (this.pdf) {
+          this.getPage(this.pdf, number);
+        }
+      },
+
+
+    })
+  </script>
+</dom-module>

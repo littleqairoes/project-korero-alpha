@@ -1,0 +1,337 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../../../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../../../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../components/home-video-block.html">
+<link rel="import" href="../components/home-pdf-block.html">
+
+<dom-module id="home-phase1">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .post-text {
+        text-align: center;
+        font-weight: bold;
+        color: red;
+        margin-top: 20px;
+      }
+
+      :host .instruction {
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.5em;
+      }
+
+      :host .sub-instruction {
+        margin: 10px;
+        margin-top: 30px;
+        text-align: center;
+        font-size: 1.25em;
+      }
+
+      :host .pdf-segement {
+        max-width: 400px;
+      }
+    </style>
+
+
+      <app-route
+        route="{{pageRoute}}"
+        pattern="/:setNumber"
+        data="{{setData}}"
+        tail="{{blockroute}}">
+      </app-route>
+
+      <app-route
+        route="{{blockroute}}"
+        pattern="/:blockNumber"
+        data="{{blockData}}"
+        tail="{{seqroute}}">
+      </app-route>
+
+      <app-route
+        route="{{seqroute}}"
+        pattern="/:seqNumber"
+        data="{{seqData}}"
+        tail="{{subroute}}">
+      </app-route>
+
+      <template is="dom-if" if="{{setNumber}}">
+        <firebase-document
+          id="setdoc"
+          path="/experiment/sets/{{setNumber}}"
+          data="{{setObject}}">
+        </firebase-document>
+      </template>
+
+
+      <template is="dom-if" if="{{_renderSeq(blockNumber, seqNumber)}}">
+        <firebase-document
+          id="seqdoc"
+          path="/experiment/blocks/{{blockNumber}}/{{seqNumber}}"
+          data="{{seqObject}}">
+        </firebase-document>
+
+        <template is="dom-if" if="{{material}}">
+          <firebase-document
+            id="materialdoc"
+            path="/experiment/materials/{{material}}"
+            data="{{materialObject}}">
+          </firebase-document>
+
+          <div class="">
+            <div class="post-text">
+              POST: {{seqObject.text}}
+            </div>
+            <div class="instruction">
+              Reply by referring to these segments in these materials. Your reply should be succint and easy for readers to locate these segments in these materials.
+            </div>
+
+            <div class="horizontal layout">
+              <template is="dom-if" if="{{checkVideoSegments(videoSegments)}}">
+                <div class="flex video-segment">
+                  <template is="dom-repeat" items="{{videoSegments}}">
+                    <div class="sub-instruction">
+                      {{item.instruction}}
+                    </div>
+                    <home-video-block videoid="[[item.video]]"></home-video-block>
+                  </template>
+                  <template is="dom-if" if="{{_isForum(seqObject.interface)}}">
+                    <div class="sub-instruction">
+                      Video Link:<br/>
+                      <a href="/korero/video/{{materialValue}}/" target="_blank">{{getHostname()}}/korero/video/{{materialValue}}/</a>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <template is="dom-repeat" items="{{pdfSegments}}">
+                <div class="flex pdf-segement">
+                  <div class="sub-instruction">
+                    {{item.instruction}}
+                  </div>
+                  <div class="">
+                    <home-pdf-block file="[[item.pdf]]"></home-pdf-block>
+                  </div>
+                  <div class="sub-instruction">
+                    PDF Link:<br/>
+                    <a href="[[item.pdf]]" target="_blank">[[item.pdf]]</a>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div class="horizontal layout center">
+              <div class="flex"></div>
+                <div class="sub-instruction">
+                  <a href="/experiment/[[seqObject.interface]]/[[materialValue]]/[[task]]" target="interface">Open Interface</a>
+                </div>
+                <div class="sub-instruction">
+                  <paper-button on-tap="next">Next</paper-button>
+                </div>
+              <div class="flex"></div>
+            </div>
+          </div>
+        </template>
+      </template>
+
+    <paper-dialog id="dialog">
+      <h2>Instruction</h2>
+      <p>
+        Before going to the next part. You can take a rest. If you have questions, please feel free to ask. Go back to the questionnaire you have opened
+        to answer a few questions about this block
+      </p>
+      <p>
+        After answering, please click next for the next part
+      </p>
+      <paper-button on-tap="doneBlock">Next</paper-button>
+    </paper-dialog>
+  </template>
+  <script>
+    Polymer({
+      is: 'home-phase1',
+
+      properties: {
+        pageRoute: {
+          type: Object,
+        },
+        blockroute: {
+          type: Object
+        },
+        seqroute: {
+          type: Object
+        },
+        user: {
+          type: Object
+        },
+        setNumber: {
+          type: String,
+        },
+        setObject: {
+          type: Object
+        },
+        materialObject: {
+          type: Object
+        },
+        setArray: {
+          type: Array
+        },
+        blockNumber: {
+          type: String,
+          observer: '_blockNumberChanged'
+        },
+        blockIndex: {
+          type: Number
+        },
+        seqNumber: {
+          type: String
+        },
+        material: {
+          type: String
+        },
+        materialValue: {
+          type: String
+        },
+        videoSegments: {
+          type: Array
+        },
+        pdfSegments: {
+          type: Array
+        },
+        task: {
+          type: String
+        }
+      },
+      // behaviors
+      observers: [
+        '_setObjectChanged(setObject.*)',
+        '_setMaterial(seqObject.*)',
+        // '_check(setData.*)',
+        '_check(pageRoute)',
+        '_setMaterialValue(materialObject.*)',
+        '_setDataChanged(setData.setNumber)',
+        '_blockDataChanged(blockData.blockNumber)',
+        '_seqDataChanged(seqData.seqNumber)',
+      ],
+
+      _check: function(e) {
+        console.log(e)
+      },
+
+      getHostname: function() {
+        return window.location.hostname;
+      },
+
+      _isForum: function(ui) {
+        return ui === 'forum'
+      },
+
+      _setMaterial: function(e) {
+        if (e && e.value) {
+          var obj = e.value;
+          this.material = obj.material;
+          // console.log(obj)
+          this.videoSegments = [];
+          this.pdfSegments = [];
+          if (obj.segments) {
+            for (var i in obj.segments) {
+              var segment = obj.segments[i];
+              if (segment.video) {
+                this.push('videoSegments', segment)
+              } else if (segment.pdf) {
+                this.push('pdfSegments', segment)
+              }
+            }
+          }
+        }
+      },
+
+      _setMaterialValue: function(e) {
+        if (e && e.value) {
+          this.materialValue = e.value;
+        }
+      },
+
+      _check: function(e) {
+        if (e && e.value) {
+          console.log(e.value)
+        }
+      },
+
+      _renderSeq: function(blockNumber, seqNumber) {
+        return blockNumber && seqNumber
+      },
+
+      _setDataChanged: function(setNumber) {
+        this.setNumber = setNumber || 's1'
+      },
+
+      _blockDataChanged: function(blockNumber) {
+
+        this.blockNumber = blockNumber || 'demo'
+      },
+
+      _blockNumberChanged: function(blockNumber) {
+        if (blockNumber === 'demo') {
+          this.task = 'phase1practice'
+        } else if (blockNumber === 'b1') {
+          this.task = 'task1'
+        } else if (blockNumber === 'b2') {
+          this.task = 'task2'
+        } else if (blockNumber === 'b3') {
+          this.task = 'task3'
+        } else if (blockNumber === 'b4') {
+          this.task = 'task4'
+        }
+      },
+
+      _seqDataChanged: function(seqNumber) {
+        console.log(seqNumber)
+        this.seqNumber = seqNumber || 'seq1'
+      },
+
+      _setObjectChanged: function(setObject) {
+        if (setObject.value) {
+          this.setArray = [];
+          console.log(setObject.value)
+          var array = ['1','2','3','4','5'];
+          for (var i in setObject.value) {
+            array[setObject.value[i] - 1] = i;
+          }
+          for (var j in array) {
+            this.push('setArray', array[j]);
+          }
+        }
+
+      },
+
+      checkVideoSegments: function(videoSegments) {
+        return videoSegments.length > 0
+      },
+
+      doneBlock: function() {
+        var index = -1;
+        for (var i in this.setArray) {
+          if (this.setArray[i] === this.blockNumber) {
+            index = parseInt(i,10) + 1;
+            break;
+          }
+        }
+        if (this.setArray[index]) {
+          window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq1');
+        } else {
+          window.location.assign('/home/done');
+        }
+      },
+
+      next: function() {
+        if (this.seqObject.next === 'done') {
+          this.$.dialog.open();
+        } else {
+          window.location.assign('/home/phase1/'+this.setNumber+'/'+this.blockNumber+'/'+this.seqObject.next);
+        }
+      },
+
+    });
+  </script>
+</dom-module>

@@ -3,6 +3,7 @@
 <link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
+<link rel="import" href="../../../../configs/behaviors/utils-behavior.html">
 <script src="../../../../../bower_components/fabric.js/dist/fabric.js"></script>
 
 <dom-module id="show-document-block">
@@ -175,7 +176,18 @@
 
           for (var i in this.boxes) {
             if (this.boxes[i] && number === this.boxes[i].page) {
-              var rect = new fabric.Rect(this.boxes[i]);
+              var oldHeight = this.boxes[i].pageHeight ? this.boxes[i].pageHeight : this.canvas.height;
+              var oldWidth = this.boxes[i].pageWidth ? this.boxes[i].pageWidth : this.canvas.width
+              var obj = {
+                top : (this.boxes[i].top * this.canvas.height) / oldHeight ,
+                left : (this.boxes[i].left * this.canvas.width) / oldWidth,
+                width : (this.boxes[i].width * this.canvas.width) / oldWidth,
+                height : (this.boxes[i].height * this.canvas.height) / oldHeight,
+                fill : 'transparent',
+                stroke: 'red',
+                strokewidth: 4,
+              }
+              var rect = new fabric.Rect(obj);
               this.canvas.add(rect);
               // console.log(this.boxes[i]);
             }

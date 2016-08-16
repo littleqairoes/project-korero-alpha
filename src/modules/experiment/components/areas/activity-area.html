@@ -40,7 +40,7 @@
       <div class="horizontal layout center">
         <div class="flex">
         </div>
-        <div class="flex-5" style="margin-top: 20px">
+        <div class="flex-10" style="margin-top: 20px">
           <video-block
             id="video-block"
             videoid="[[videoid]]"
@@ -50,6 +50,7 @@
             on-save-linking="_saveLinking"
             on-cancel-linking="_cancelLinking"
             on-change-discussion-time="_changeDiscussionTime"
+            ui="[[ui]]"
           ></video-block>
         </div>
         <div class="flex">
@@ -125,11 +126,17 @@
       newDiscussion: function() {
         this.$$('#video-block').newDiscussion();
       },
+      newComment: function(data) {
+        this.$$('#video-block').newComment(data);
+      },
       closeDiscussion: function() {
         this.$$('#video-block').closeDiscussion();
       },
+      closeComment: function() {
+        this.$$('#video-block').closeComment();
+      },
       _changeDiscussionTime: function(e) {
-        this.fire('change-discussion-time', e.detail, {bubbles: false});
+        // this.fire('change-discussion-time', e.detail, {bubbles: false});
       },
       openEditActivity: function() {
         this.viewEditActivity = true
@@ -203,30 +210,27 @@
         }
       },
       _cancelEditActivity: function() {
-        this.fire('cancel-edit-activity', {}, {bubbles: false});
+        // this.fire('cancel-edit-activity', {}, {bubbles: false});
         this.resetVideoLink()
         this.viewEditActivity = false;
       },
       _cancelEditCommentActivity: function(e) {
-        if (e.model) {
-          this.fire('cancel-edit-comment-activity', e.detail, {bubbles: false});
-          this.viewEditCommentActivity = false;
-          this.resetVideoLink()
-        }
+        // this.fire('cancel-edit-comment-activity', e.detail, {bubbles: false});
+        this.viewEditCommentActivity = false;
+        this.resetVideoLink()
+
       },
       _saveEditActivity: function(e) {
-        if (e.model) {
-          this.fire('save-edit-activity', e.detail, {bubbles: false});
-          this.viewEditActivity = false;
-          this.resetVideoLink()
-        }
+        // this.fire('save-edit-activity', e.detail);
+        this.viewEditActivity = false;
+        this.resetVideoLink()
+
       },
       _saveEditCommentActivity: function(e) {
-        if (e.model) {
-          this.fire('save-edit-comment-activity', e.detail, {bubbles: false});
-          this.viewEditCommentActivity = false;
-          this.resetVideoLink()
-        }
+        // this.fire('save-edit-comment-activity', e.detail, {bubbles: false});
+        this.viewEditCommentActivity = false;
+        this.resetVideoLink()
+
       },
 
       resetVideoLink: function() {
@@ -244,7 +248,7 @@
         // this.fire('save-linking', e.detail, {bubbles: false});
       },
       _cancelLinking: function() {
-        this.fire('cancel-linking', {}, {bubbles: false});
+        // this.fire('cancel-linking', {}, {bubbles: false});
       },
 
       playSpecific: function(e) {

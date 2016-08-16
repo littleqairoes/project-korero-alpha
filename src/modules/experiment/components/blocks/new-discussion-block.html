@@ -1,11 +1,18 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../bower_components/paper-input/paper-input.html">
 <link rel="import" href="../../../../../bower_components/paper-toast/paper-toast.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="thumbnails-block.html">
+
 <script src="../../../../../bower_components/chance/chance.js"></script>
 <script src="../js/pdf.js"></script>
 
-<dom-module id="new-comment-block">
+<dom-module id="new-discussion-block">
   <template>
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
       :host .text .hover {
@@ -27,9 +34,9 @@
         font-size: 0.8em;
       }
 
-      :host #new-comment-block-content {
+      :host #new-discussion-block-content {
         padding: 20px;
-        padding-top: 10px;
+        padding-top: 0px;
       }
 
       :host #text {
@@ -58,11 +65,30 @@
       :host .text .hover:hover {
         background-color: yellow;
       }
+
+      :host .time {
+        padding: 10px;
+      }
+
+      :host #thumbnails-block {
+        position: fixed;
+        width: 400px;
+        background-color: #FFF;
+      }
+
     </style>
 
     <paper-material>
-      <div id="new-comment-block-content">
-        New Comment:
+      <div class="time">
+        <template is="dom-if" if="{{!discussion.videolink}}">
+          Global: <iron-icon icon="icons:language"></iron-icon>
+        </template>
+        <template is="dom-if" if="{{discussion.videolink}}">
+          Specific: <iron-icon icon="icons:radio-button-checked"></iron-icon> [[timeToString(discussion.start)]] - [[timeToString(discussion.end)]]
+        </template>
+      </div>
+      <div id="new-discussion-block-content" >
+        <paper-input label="Thread title here..." id="title"></paper-input>
         <div
           id="text"
           class="text"
@@ -97,7 +123,9 @@
           <template is="dom-if" if="{{viewRefer}}">
             <div class="refer-view">
               <b>Reference this term to:</b><br/>
-              <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
+              <template is="dom-if" if="{{isKorero(ui)}}">
+                <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
+              </template>
               <paper-input label="Put link to external PDF" id="external"></paper-input>
               <paper-button raised on-tap="link">Link File</paper-button><br/>
             </div>
@@ -105,12 +133,23 @@
         </paper-material>
       </div>
     </paper-material>
+
+    <template is="dom-if" if="{{viewThumbnailBlock}}">
+      <thumbnails-block
+        id="thumbnails-block"
+        >
+      </thumbnails-block>
+    </template>
+
+
     <paper-toast id="toaster"></paper-toast>
+
+
   </template>
 
   <script>
     Polymer({
-      is: 'new-comment-block',
+      is: 'new-discussion-block',
       properties: {
         discussion: {
           type: Object,
@@ -129,11 +168,17 @@
           type: Boolean,
           value: false
         },
-        discussionid: {
-          type: String
-        },
+        videoid: String,
+        ui: String,
         user: {
           type: Object
+        },
+        viewThumbnailBlock: {
+          type: Boolean,
+          value: false
+        },
+        task: {
+          type: String
         }
       },
 
@@ -141,12 +186,23 @@
         Polymer.UtilsBehavior
       ],
 
-      newComment: function() {
+      timeToString: function(time) {
+        return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
+      },
+
+      isKorero: function(ui) {
+        return ui === 'korero';
+      },
+
+      newDiscussion: function() {
         this.discussion = {
+          title: '',
           text: '',
           nodes: {},
+          videolink: false,
           ui: this.ui
         };
+        this.$$('#title').value = '';
         this.$$('#text').innerHTML = '';
         this.$$('#options').setAttribute('style', 'display: none');
       },
@@ -175,18 +231,18 @@
             this.selected.range.deleteContents();
             this.selected.range.insertNode(document.createTextNode(this.node.innerHTML));
             this.selected = null;
-            this.fire('close-edit-activity', {}, {bubbles: false});
+            this.fire('close-edit-activity', {});
             this.node = null;
           } else {
-            this.fire('close-thumbnail', {}, {bubbles: false});
+            this.fire('close-thumbnail', {});
           }
         }
       },
 
       openHover: function() {
         if (this.selected.text && this.selected.text.length > 0) {
-          var elRect = this.$$('#new-comment-block-content').getBoundingClientRect();
-          var top = (this.selected.pos.top - elRect.top) + this.selected.pos.height;
+          var elRect = this.$$('#new-discussion-block-content').getBoundingClientRect();
+          var top = (this.selected.pos.top - elRect.top) + this.selected.pos.height + 64;
           var left = (this.selected.pos.left) - elRect.left;
           if (elRect.width - left < 200) {
             left = elRect.width - 200;
@@ -242,17 +298,51 @@
 
       link: function(e) {
         this.referViewerPdf = null;
-        this.fire('ready-edit-comment-activity', {}, {bubbles: false});
-        PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
-          this.fire('edit-comment-activity', {pdf: pdf, file: this.$$('#external').value, discussionid: this.discussionid}, {bubbles: false});
-          this.$$('#external').value = '';
+
+        if (this.ui === 'korero') {
+          this.fire('ready-edit-activity', {});
+          PDFJS.getDocument(this.$$('#external').value).then(function(pdf){
+            this.fire('edit-activity', {pdf: pdf, file: this.$$('#external').value});
+            this.$$('#external').value = '';
+            this.$$('#options').setAttribute('style', `display: none`);
+          }.bind(this)).catch(function(err){
+            console.log(err);
+            this.$.toaster.show(err.message);
+          }.bind(this));
+          this.viewOptions = false;
+          this.viewRefer = true;
+        } else {
           this.$$('#options').setAttribute('style', `display: none`);
-        }.bind(this)).catch(function(err){
-          console.log(err);
-          this.$.toaster.show(err.message);
-        }.bind(this));
+          var nodeId = this.node.getAttribute('data-node-id');
+          var referId = null;
+          do {
+            referId = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 10});
+          } while (this.discussion.nodes[nodeId].refers[referId]);
+          // console.log(data);
+          this.discussion.nodes[nodeId].refers[referId] = {
+            file: this.$$('#external').value,
+            boxes: {
+              root: {
+                id: 'root',
+                page: 1
+              }
+            }
+          };
+
+          this.node.classList = ['hover'];
+          this.node.addEventListener('mouseover', this._mouseoverNode.bind(this));
+          this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+          this.node.addEventListener('tap', this._tapNode.bind(this));
+          this.node = null;
+        }
+
+      },
+
+      linkvideo: function(e) {
+        this.fire('start-linking', {});
         this.viewOptions = false;
         this.viewRefer = true;
+        this.$$('#options').setAttribute('style', `display: none`);
       },
 
       cancelEditActivity: function() {
@@ -267,7 +357,7 @@
         } while (this.discussion.nodes[nodeId].refers[referId]);
         // console.log(data);
         this.discussion.nodes[nodeId].refers[referId] = data;
-        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true, discussionid: this.discussionid}, {bubbles: false})
+        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true})
       },
 
       closedThumbnailBlock: function() {
@@ -295,20 +385,57 @@
       },
 
       _mouseoverNode: function(e) {
-        var nodeId = e.target.getAttribute('data-node-id');
-        var node = this.discussion.nodes[nodeId];
-        console.log(node);
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
+        this._mouseoutNode();
+        if (this.ui === 'korero') {
+          var nodeId = e.target.getAttribute('data-node-id');
+          var element = e.target;
+          var box = e.target.getBoundingClientRect();
+          console.log(box);
+          var node = this.discussion.nodes[nodeId];
+          this.viewThumbnailBlock = true;
+          setTimeout(function(){
+            this.$$('#thumbnails-block').setNode(node, element.innerHTML, false, false);
+            this.$$('#thumbnails-block').setAttribute('style', `left: ${box.left - 200}px; top: ${box.top + 20}px; z-index: 100`);
+          }.bind(this), 100);
+          // this.fire('mouseover-node', {node: node, text: e.target.innerHTML});
+        }
       },
       _mouseoutNode: function(e) {
-        this.fire('mouseout-node', {}, {bubbles: false});
+        if (this.viewThumbnailBlock) {
+          this.$$('#thumbnails-block').setNode();
+        }
+        this.viewThumbnailBlock = false;
+        // this.fire('mouseout-node', {});
       },
+
+      // _mouseoverNode: function(e) {
+      //   if (this.isKorero(this.ui)) {
+      //     var nodeId = e.target.getAttribute('data-node-id');
+      //     var node = this.discussion.nodes[nodeId];
+      //     console.log(node);
+      //     this.fire('mouseover-node', {node: node, text: e.target.innerHTML});
+      //   }
+
+      // },
+      // _mouseoutNode: function(e) {
+      //   this.fire('mouseout-node', {});
+      // },
       _tapNode: function(e) {
-        this.closedThumbnailBlock();
-        this.fire('close-edit-activity', {}, {bubbles: false});
+        this._mouseoutNode();
         var nodeId = e.target.getAttribute('data-node-id');
         var node = this.discussion.nodes[nodeId];
-        this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
+        if (this.isKorero(this.ui)) {
+          this.closedThumbnailBlock();
+          this.fire('close-edit-activity', {});
+          this.fire('tap-node', {node: node, text: e.target.innerHTML, open: true});
+        } else {
+          for (var i in node.refers) {
+            if (node.refers[i]) {
+              window.open(node.refers[i].file);
+              break;
+            }
+          }
+        }
       },
 
       saveLinking: function(data) {
@@ -317,40 +444,71 @@
         do {
           referId = chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 10});
         } while (this.discussion.nodes[nodeId].refers[referId]);
-        console.log(data);
         this.discussion.nodes[nodeId].refers[referId] = {
           boxes: {
             root: data
           }
         };
-        console.log(this.discussionid)
-        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true, discussionid: this.discussionid}, {bubbles: false})
+        this.fire('open-thumbnail-block', {node: this.discussion.nodes[nodeId], text: this.node.innerHTML, newDiscussion: true, open: true})
       },
 
-      linkvideo: function() {
-        this.fire('start-comment-linking', {discussionid: this.discussionid}, {bubbles: false});
-        this.viewOptions = false;
-        this.viewRefer = true;
-        this.$$('#options').setAttribute('style', `display: none`);
+      changeDiscussionTime: function(data) {
+        console.log(data);
+        if (data.discussionstart != undefined || data.discussionstart != null) {
+          this.set('discussion.videolink', true);
+          // this.discussion.videolink = true
+        } else {
+          this.set('discussion.videolink', false);
+          // this.discussion.videolink = false
+        }
+        this.set('discussion.start', data.discussionstart);
+        this.set('discussion.end', data.discussionend);
+        // this.discussion.start = data.discussionstart;
+        // this.discussion.end = data.discussionend;
+        console.log(this.discussion)
       },
 
       cancel: function() {
-        this.fire('cancel-comment', {}, {bubbles: false});
+        this.$$('#options').setAttribute('style', `display: none`);
+        this.fire('cancel-discussion', {});
+      },
+
+      getUTC: function() {
+        var t = new Date();
+        var y = t.getFullYear();
+        var m = t.getMonth();
+        var d = t.getDate();
+        var h = t.getHours();
+        var min = t.getMinutes();
+        var s = t.getSeconds();
+        var mil = t.getMilliseconds();
+        return Date.UTC(y, m, d, h, min, s, mil);
       },
 
       post: function() {
-        // this.set('discussion.title', this.$$('#title').value);
+        this.set('discussion.title', this.$$('#title').value);
         this.set('discussion.text', this.$$('#text').innerHTML);
         this.set('discussion.user', this.user.uid);
-        var ref = '/korero/' + this.videoid + "/comments/" + this.discussionid + "/comment-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20})
+        this.set('discussion.task', this.task);
+        this.set('discussion.createdOn', this.getUTC());
 
+        if (this.user.displayName) {
+          this.set('discussion.participantNumber', this.user.displayName);
+        }
+
+        var ref = this.discussion.videolink ? 'korero/' + this.videoid + "/specifics/specifics-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20}) :
+          'korero/' + this.videoid + "/discussion/discussion-" + this.ui + "-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20})
         firebase.database().ref(ref).set(this.discussion).then(function(){
           this.$.toaster.show('Saved');
-          this.fire('save-comment', {}, {bubbles: false});
+          this.$$('#options').setAttribute('style', `display: none`);
+          this.fire('save-discussion', {});
         }.bind(this)).catch(function(err){
           this.$.toaster.show(err.message);
         }.bind(this));
-      }
+      },
+      _removeThumbnailBlock: function() {
+
+      },
     })
   </script>
 </dom-module>

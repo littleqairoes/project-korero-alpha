@@ -4,6 +4,8 @@
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../../../../bower_components/paper-toast/paper-toast.html">
 <link rel="import" href="../../../../../bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="../../../../../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <script src="../js/pdf.js"></script>
 
 <dom-module id="thumbnails-block">
@@ -11,6 +13,7 @@
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
       :host #thumbnails-block-content {
         padding: 10px;
+        position: relative;
       }
 
       :host .container {
@@ -34,6 +37,7 @@
 
       :host .paper-mat {
         position: relative;
+        margin-right: 10px;
       }
 
       :host .video-overlay {
@@ -42,15 +46,27 @@
         position: absolute;
         cursor: pointer;
         border: 1px solid black;
-        top: 0px;
+        top: 18px;
       }
 
       :host .video-overlay:hover {
         border: 1px solid red;
       }
+
+      :host .video-overlay-time, .pdf-description {
+        text-align: center;
+        font-size: 0.8em;
+      }
+
+      :host #exit-thumbnail {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+      }
     </style>
 
     <div id="thumbnails-block-content">
+      <paper-icon-button id="exit-thumbnail" icon="icons:close" on-tap="_closeThumbnailsBlock"></paper-icon-button>
       <div class="quote">
         Quote: "{{text}}"
       </div>
@@ -58,6 +74,9 @@
         <template is="dom-repeat" items="{{boxes}}">
           <paper-material class="paper-mat">
             <template is="dom-if" if="{{!item.video}}">
+              <div class="pdf-description">
+                PDF
+              </div>
               <img
                 class="thumbnail"
                 src="[[item.thumbnail]]"
@@ -66,9 +85,19 @@
                 on-mouseout="_mouseoutThumbnail"
                 on-tap="_tapThumbnail"
               >
+              <div class="pdf-description">
+                <template is="dom-if" if="{{item.top}}">
+                  Page [[item.page]]
+                </template>
+                <template is="dom-if" if="{{!item.top}}">
+                  General
+                </template>
+              </div>
             </template>
             <template is="dom-if" if="{{item.video}}">
-
+              <div class="pdf-description">
+                Main Video
+              </div>
               <google-youtube
                 width="160px"
                 height="90px"
@@ -83,6 +112,14 @@
                 on-mouseout="_mouseoutThumbnail"
                 on-tap="_tapThumbnail"
               ></div>
+              <div class="video-overlay-time">
+                <template is="dom-if" if="{{item.videostart}}">
+                  [[timeToString(item.videostart)]] - [[timeToString(item.videoend)]]
+                </template>
+                <template is="dom-if" if="{{!item.videostart}}">
+                  General
+                </template>
+              </div>
             </template>
           </paper-material>
         </template>
@@ -136,7 +173,21 @@
           type: Object
         },
         discussionid: String,
-        prevdiscid: String
+        prevdiscid: String,
+
+      },
+      listeners: {
+        'mousemove': '_mouseMove'
+      },
+      _mouseMove: function(e) {
+        if (!this.permanentOpen) {
+
+          this._closeThumbnailsBlock();
+        }
+      },
+
+      timeToString: function(time) {
+        return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
       },
       setPrevious: function() {
         if (this.permanent) {
@@ -166,14 +217,15 @@
           this.setNode();
         }
       },
-      setNode: function(node, text, newDiscussion, p, discussionid) {
+      setNode: function(node, text, newDiscussion, p, discussionid, open) {
         this.text = text;
         this.boxes = [];
         this.hover = p;
         this.editor = newDiscussion;
         this.node = node;
         this.discussionid = discussionid;
-        console.log(node);
+        this.permanentOpen = open;
+        // console.log(node);
 
         if (node) {
           for (var i in node.refers) {
@@ -190,9 +242,10 @@
                 height: node.refers[i].boxes[j].height,
                 video: node.refers[i].boxes[j].video,
                 videostart: node.refers[i].boxes[j].videostart,
-                videoend: node.refers[i].boxes[j].videoend
+                videoend: node.refers[i].boxes[j].videoend,
+                page: node.refers[i].boxes[j].page
               };
-              console.log(obj)
+              // console.log(obj)
               this.push('boxes', obj);
             }
           }
@@ -215,7 +268,8 @@
                 index: k,
                 video: this.boxes[k].video,
                 videostart: this.boxes[k].videostart,
-                videoend: this.boxes[k].videoend
+                videoend: this.boxes[k].videoend,
+                page: this.boxes[k].page
               });
             }
             this.previousnode = {};
@@ -239,7 +293,7 @@
       },
       _mouseoverThumbnail: function(e) {
         var el = e.target;
-        console.log(el)
+        // console.log(el)
         //console.log(, e.target.getAttribute('data-index'), this.boxes)
         if (this.boxes[el.getAttribute('data-index')].video) {
           this.fire('mouseover-video', this.boxes[e.target.getAttribute('data-index')], {bubbles: false})
@@ -264,7 +318,7 @@
           PDFJS.getDocument(this.boxes[el.getAttribute('data-index')].file).then(function(pdf){
 
             console.log(node, referId)
-            this.fire('tap-thumbnail', {pdf: pdf, boxes: node.refers[referId].boxes}, {bubbles: false});
+            this.fire('tap-thumbnail', {pdf: pdf, boxes: node.refers[referId].boxes});
           }.bind(this)).catch(function(err){
             console.log(err);
             this.$.toaster.show(err.message);
@@ -273,6 +327,7 @@
       },
       _closeThumbnailsBlock: function(e) {
         this.permanent = false;
+        this.permanentOpen = false;
         this.fire('close-thumbnails-block', {discussionid: this.discussionid}, {bubbles: false});
       },
       _openEditorOptions: function() {

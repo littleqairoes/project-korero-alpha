@@ -5,11 +5,12 @@
 <link rel="import" href="../components/areas/activity-area.html">
 <link rel="import" href="../components/areas/discussion-area.html">
 
-<dom-module id="adi-viewer">
+<dom-module id="forum-viewer">
   <template>
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
       :host .discussion-area {
         min-width: 320px;
+        width: 35%;
       }
 
       :host .activity-area {
@@ -24,50 +25,32 @@
       tail="{{subroute}}">
     </app-route>
 
-    <div class="horizontal layout fullbleed wrap">
-      <div class="flex-3 activity-area">
-        <activity-area
-          id="activity-area"
-          videoid="[[videoid]]"
-          ui="[[ui]]"
-          on-cancel-edit-activity="_cancelEditActivity"
-          on-save-edit-activity="_saveEditActivity"
-          on-cancel-edit-comment-activity="_cancelEditCommentActivity"
-          on-save-edit-comment-activity="_saveEditCommentActivity"
-          on-save-linking="_saveLinking"
-          on-cancel-linking="_cancelLinking"
-          on-change-discussion-time="_changeDiscussionTime"
-        ></activity-area>
+    <app-route
+      route="{{subroute}}"
+      pattern="/:task"
+      data="{{taskData}}"
+      tail="{{subsubroute}}">
+    </app-route>
+
+    <template is="dom-if" if="{{user}}">
+      <div class="horizontal layout fullbleed wrap">
+        <div class="flex discussion-area">
+          <discussion-area
+            id="discussion-area"
+            videoid="[[videoid]]"
+            ui="[[ui]]"
+            user="[[user]]"
+            task="[[task]]"
+
+          ></discussion-area>
+        </div>
       </div>
-      <div class="flex discussion-area">
-        <discussion-area
-          id="discussion-area"
-          videoid="[[videoid]]"
-          ui="[[ui]]"
-          user="[[user]]"
-          on-new-discussion="_newDiscussion"
-          on-close-discussion="_closeDiscussion"
-          on-ready-edit-activity="_readyEditActivity"
-          on-ready-edit-comment-activity="_readyEditCommentActivity"
-          on-edit-activity="_editActivity"
-          on-edit-comment-activity="_editCommentActivity"
-          on-close-edit-activity="_closeEditActivity"
-          on-close-edit-comment-activity="_closeEditCommentActivity"
-          on-mouseover-thumbnail="_mouseoverThumbnail"
-          on-mouseout-thumbnail="_mouseoutThumbnail"
-          on-tap-thumbnail="_tapThumbnail"
-          on-pre-show-thumbnail="_preShowThumbnail"
-          on-start-linking="_startLinking"
-          on-tap-video="_tapVideo"
-          on-mouseover-video="_mouseoverVideo"
-        ></discussion-area>
-      </div>
-    </div>
+    </template>
 
   </template>
   <script>
     Polymer({
-      is: 'adi-viewer',
+      is: 'forum-viewer',
       properties: {
         videoid: {
           type: String,
@@ -79,12 +62,24 @@
         pageData: {
           type: Object
         },
+        taskData: {
+          type: Object
+        },
         pageRoute: {
           type: Object
+        },
+        user: {
+          type: Object
+        },
+        task: {
+          type: String,
+          notify: true,
+          value: 'all'
         }
       },
       observers: [
-        '_pageDataChanged(pageData.videoid)'
+        '_pageDataChanged(pageData.videoid)',
+        '_taskDataChanged(taskData.task)'
       ],
       _newDiscussion: function() {
         this.$$('#activity-area').newDiscussion();
@@ -97,6 +92,17 @@
       },
       _pageDataChanged: function(id) {
         this.videoid = id || 'UieTvd7jU0E';
+        console.log(this.videoid)
+      },
+      _taskDataChanged: function(task) {
+        console.log(task)
+        if (task) {
+          this.task = task || 'all'
+        } else {
+          this.task = 'all'
+        }
+
+        console.log(this.task)
       },
       _readyEditActivity: function() {
         this.$$('#activity-area').openEditActivity();
@@ -178,6 +184,10 @@
       },
       _cancelLinking: function() {
         this.$$('#discussion-area').cancelLinking();
+      },
+
+      _playSpecific: function(e) {
+        this.$$('#activity-area').playSpecific(e.detail);
       }
     });
   </script>

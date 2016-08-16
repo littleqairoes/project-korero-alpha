@@ -4,7 +4,7 @@
 <link rel="import" href="../layout/main-layout.html">
 
 
-<dom-module id="korero-with-layout">
+<dom-module id="experiment-with-layout">
   <template>
 
     <style>
@@ -25,12 +25,14 @@
       module-route="{{moduleRoute}}"
       module-name="[[moduleName]]"
       page="[[page]]"
-      app-title="Korero"
+      app-title="System"
       user="{{user}}"
       >
       <!--<korero-interface name="korero" route="[[subroute]]"></korero-interface>-->
       <korero-viewer name="korero" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></korero-viewer>
       <adi-viewer name="adi" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></adi-viewer>
+      <forum-viewer name="forum" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></forum-viewer>
+      <video-viewer name="video" page-route="[[subroute]]" user="{{user}}" ui="[[page]]"></video-viewer>
     </main-layout>
     <!-- Put template ends here -->
 
@@ -39,7 +41,7 @@
     Polymer({
 
       // name of the component
-      is: 'korero-with-layout',
+      is: 'experiment-with-layout',
 
       // behaviors
       behaviors: [
@@ -47,8 +49,6 @@
       ],
 
       _moduleDataChanged(page) {
-        console.log(this.moduleRoute);
-        console.log(page)
         this.page = page || 'korero';
       },
 

@@ -1,0 +1,33 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<dom-module id="home-done">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .text-center {
+        padding: 20px;
+        margin-top: 150px;
+      }
+    </style>
+
+    <div class="horizontal layout">
+      <div class="flex">
+      </div>
+      <div class="flex">
+        <paper-material>
+
+          <div class="text-center">
+            Thank you for participating.
+          </div>
+        </paper-material>
+      </div>
+      <div class="flex">
+      </div>
+    </div>
+  </template>
+  <script>
+    Polymer({
+      is: 'home-done'
+    });
+  </script>
+</dom-module>

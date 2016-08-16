@@ -24,11 +24,13 @@
       module-route="{{moduleRoute}}"
       module-name="[[moduleName]]"
       page="[[page]]"
-      app-title="Korero"
+      app-title="System"
       menu="[[menu]]"
+      user="{{user}}"
       >
-      <home-root name="root"></home-root>
-      <home-dashboard name="dashboard"></home-dashboard>
+      <home-root name="root" user="{{user}}" page-route="[[subroute]]"></home-root>
+      <home-phase1 name="phase1" user="{{user}}" page-route="[[subroute]]"></home-phase1>
+      <home-done name="done" user="{{user}}" page-route="[[subroute]]"></home-done>
     </main-layout>
     <!-- Put template ends here -->
 
@@ -56,7 +58,26 @@
               auth: false
             }
           ]
-        }
+        },
+        user: {
+          type: Object
+        },
+        // subroute: {
+        //   type: Object,
+        //   // reflectToAttribute: true
+        // },
+        // subsubroute: {
+        //   type: Object
+        // }
+      },
+
+      observers: [
+        'check(subroute)'
+      ],
+
+      check: function(e) {
+        console.log(e)
+        // this.set('subsubroute', e.value);
       },
 
       // behaviors

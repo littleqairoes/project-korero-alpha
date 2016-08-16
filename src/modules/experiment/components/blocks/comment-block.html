@@ -1,0 +1,250 @@
+<link rel="import" href="../../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="thumbnails-block.html">
+<script src="../../../../../bower_components/chance/chance.js"></script>
+
+
+<dom-module id="comment-block">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .text .hover {
+        text-decoration: underline;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      :host .text .hover:hover {
+        background-color: yellow;
+      }
+
+      :host #comment-block-content {
+        padding: 10px;
+        margin-bottom: 5px;
+        padding-bottom: 20px;
+      }
+
+      :host .title {
+        margin: 0;
+        padding: 0;
+      }
+
+      :host .text {
+        font-size: 0.8em;
+      }
+
+      :host #thumbnails-block {
+        position: fixed;
+        width: 400px;
+        background-color: #FFF;
+      }
+
+      :host .time {
+        padding-left: 10px;
+        padding-right: 10px;
+        cursor: pointer;
+        padding: 10px;
+        padding-bottom: 0;
+        font-size: 0.8em;
+        font-weight: bold;
+      }
+
+      :host .time:hover {
+        color: green;
+
+      }
+
+      :host #comment-block-content {
+        padding-top: 0;
+      }
+
+      :host .by-line {
+        padding-top: 10px;
+        font-size: 0.7em;
+      }
+    </style>
+
+    <paper-material on-mouseout="_mouseoutNode">
+      <template is="dom-if" if="{{comment.videolink}}">
+        <div class="time" on-tap="play">
+          Commenting on: [[timeToString(comment.start)]]
+        </div>
+      </template>
+
+      <div id="comment-block-content">
+        <div class="by-line">
+          By: {{randomName(task, user)}}<br/>
+          Created On: {{showDate(comment.createdOn)}}
+
+        </div>
+        <hr>
+        <div class="text" id="comment-text"></div>
+      </div>
+    </paper-material>
+
+    <template is="dom-if" if="{{viewThumbnailBlock}}" id="thumbnailblockif">
+      <thumbnails-block
+        id="thumbnails-block"
+        on-close-thumbnails-block="_mouseoutNode">
+      </thumbnails-block>
+    </template>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'comment-block',
+      properties: {
+        comment: {
+          type: Object,
+          observer: '_renderComment'
+        },
+        viewThumbnailBlock: {
+          type: Boolean,
+          value: false
+        }
+      },
+      listeners: [
+        'mouseout', '_mouseoutNode'
+      ],
+      observers: [
+        '_renderText(comment.text)'
+      ],
+
+      showDate: function(utc) {
+        if (utc) {
+          return new Date(utc);
+        }
+        var month = parseInt(Math.random()*7, 10);
+        if (month === 0) month = 01
+        var day = parseInt(Math.random()*28, 10);
+        if (day === 0) day = 10;
+        if (day < 10) {
+          day = '0'+day.toString(10);
+        }
+        var hour = parseInt(Math.random()*23, 10);
+        if (hour < 10) {
+          hour = '0'+hour.toString(10)
+        }
+
+        var min = parseInt(Math.random()*59, 10);
+        if (min < 10) {
+          min = '0'+min.toString(10)
+        }
+
+        var sec = parseInt(Math.random()*59, 10);
+        if (sec < 10) {
+          sec = '0'+sec.toString(10)
+        }
+        return new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+      },
+
+      randomName: function(task, user) {
+        if (task === 'all') {
+          return chance.name() + " - aka: " + user.uid;
+        }
+
+        return chance.name()
+
+      },
+
+      timeToString: function(time) {
+        return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
+      },
+      _renderComment: function(data) {
+        // console.log(data);
+      },
+
+      play: function() {
+        this.fire('play-specific', {videostart: this.comment.start, videoend: this.comment.end})
+      },
+
+      _renderText: function(text) {
+        var el = this.$$('#comment-text');
+        el.innerHTML = text;
+        var nodes = Polymer.dom(el).childNodes;
+        this.renderNode(nodes)
+
+      },
+
+      renderNode: function(nodes) {
+        for (var i in nodes) {
+          if (nodes[i].getAttribute && nodes[i].getAttribute('data-node-id') && nodes[i].getAttribute('data-node-id').length > 0) {
+            // var nodeId = nodes[i].getAttribute('data-node-id');
+            var node = nodes[i];
+            node.addEventListener('mouseover', this._mouseoverNode.bind(this));
+            node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+            node.addEventListener('tap', this._tapNode.bind(this));
+          }
+
+          var n = Polymer.dom(nodes[i]).childNodes;
+          this.renderNode(n)
+        }
+      },
+
+      _mouseoverNode: function(e) {
+        this._mouseoutNode();
+        if (this.ui === 'korero') {
+          var nodeId = e.target.getAttribute('data-node-id');
+          var element = e.target;
+          var box = e.target.getBoundingClientRect();
+          // console.log(box);
+          var node = this.comment.nodes[nodeId];
+          this.viewThumbnailBlock = true;
+          setTimeout(function(){
+            this.$$('#thumbnails-block').setNode(node, element.innerHTML, false, false);
+            this.$$('#thumbnails-block').setAttribute('style', `left: ${box.left - 200}px; top: ${box.top + 20}px; z-index: 100`);
+          }.bind(this), 100);
+          // this.fire('mouseover-node', {node: node, text: e.target.innerHTML});
+        }
+      },
+      _mouseoutNode: function(e) {
+        if (this.viewThumbnailBlock) {
+          this.$$('#thumbnails-block').setNode();
+        }
+        this.set('viewThumbnailBlock',false);
+        if (this.$$('#thumbnails-block')) {
+          this.$$('#thumbnails-block').setAttribute('style', `display: none`);
+        }
+        // this.fire('mouseout-node', {});
+      },
+
+
+      // _mouseoverNode: function(e) {
+      //   var nodeId = e.target.getAttribute('data-node-id');
+      //   var node = this.comment.nodes[nodeId];
+      //   this.fire('mouseover-node', {node: node, text: e.target.innerHTML});
+      // },
+      // _mouseoutNode: function(e) {
+      //   this.fire('mouseout-node', {});
+      // },
+
+      isKorero: function(ui) {
+        return ui === 'korero';
+      },
+      _tapNode: function(e) {
+        console.log(e)
+        this._mouseoutNode();
+        var nodeId = e.target.getAttribute('data-node-id');
+        var node = this.comment.nodes[nodeId];
+        if (this.isKorero(this.ui)) {
+          this.fire('close-edit-activity', {});
+          // var nodeId = e.target.getAttribute('data-node-id');
+          // var node = this.comment.nodes[nodeId];
+          this.fire('tap-node', {node: node, text: e.target.innerHTML, open: true});
+        } else {
+          // console.lolg(node.refers)
+          for (var i in node.refers) {
+            if (node.refers[i]) {
+              window.open(node.refers[i].file);
+              break;
+            }
+          }
+        }
+      },
+      _removeThumbnailBlock: function() {
+
+      },
+    })
+  </script>
+</dom-module>

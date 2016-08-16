@@ -1,12 +1,11 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
-<link rel="import" href="../../../../../bower_components/paper-spinner/paper-spinner.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
-<script src="../../../../../fabric.js/fabric.js"></script>
+<script src="../../../../../bower_components/fabric.js/dist/fabric.js"></script>
 
-<dom-module id="edit-document-block">
+<dom-module id="edit-document-comment-block">
   <template>
     <style include="iron-flex iron-flex-alignment iron-flex-factors">
       :host {
@@ -41,10 +40,11 @@
         position: absolute;
         top: 0;
       }
+
       :host .loader-content {
         position: absolute;
         width: 100%;
-        top: 50px;
+        top: 100px;
       }
 
       :host #spinner {
@@ -61,7 +61,6 @@
         </div>
         <div class="flex"></div>
       </div>
-
       <paper-icon-button
         id="page-left-button"
         icon="hardware:keyboard-arrow-left"
@@ -74,27 +73,25 @@
       </paper-icon-button>
       <div class="edit-activity-bottom-div horizontal layout">
         <div class="flex"></div>
-
         <div class="flex">
           <div class="horizontal layout">
             <div class="flex"></div>
             <paper-button
               id="edit-activity-ok"
               icon="icons:check"
-              on-tap="saveActivity"
+              on-tap="saveCommentActivity"
             >
               Save
             </paper-button>
             <paper-button
               id="edit-activity-cancel"
               icon="icons:close"
-              on-tap="cancelActivity"
+              on-tap="cancelCommentActivity"
             >
               Cancel
             </paper-button>
             <div class="flex"></div>
           </div>
-
         </div>
         <div class="flex-3"></div>
       </div>
@@ -103,7 +100,7 @@
 
   <script>
     Polymer({
-      is: 'edit-document-block',
+      is: 'edit-document-comment-block',
       properties: {
         boxes: {
           type: Object,
@@ -150,6 +147,7 @@
         canvas.setAttribute('width', '500px');
         this.boxes = {};
         this.page = 1;
+        this.discussionid = data.discussionid;
 
         if (data.pdf) {
           Polymer.dom(this.$$('#edit-activity')).insertBefore(backCanvas, this.$$('#page-left-button'));
@@ -192,7 +190,9 @@
                 stroke: 'red',
                 strokewidth: 4,
                 id: id,
-                page: this.page
+                page: this.page,
+                pageWidth: this.canvas.width,
+                pageHeight: this.canvas.height
               };
 
               var rect = new fabric.Rect(obj);
@@ -250,7 +250,18 @@
 
           for (var i in this.boxes) {
             if (this.boxes[i] && number === this.boxes[i].page) {
-              var rect = new fabric.Rect(this.boxes[i]);
+              var oldHeight = this.boxes[i].pageHeight ? this.boxes[i].pageHeight : this.canvas.height;
+              var oldWidth = this.boxes[i].pageWidth ? this.boxes[i].pageWidth : this.canvas.width
+              var obj = {
+                top : (this.boxes[i].top * this.canvas.height) / oldHeight ,
+                left : (this.boxes[i].left * this.canvas.width) / oldWidth,
+                width : (this.boxes[i].width * this.canvas.width) / oldWidth,
+                height : (this.boxes[i].height * this.canvas.height) / oldHeight,
+                fill : 'transparent',
+                stroke: 'red',
+                strokewidth: 4,
+              }
+              var rect = new fabric.Rect(obj);
               this.canvas.add(rect);
               // console.log(this.boxes[i]);
             }
@@ -277,9 +288,9 @@
         }
       },
 
-      cancelActivity: function() {
+      cancelCommentActivity: function() {
         this.closeActivity();
-        this.fire('cancel-edit-activity', {}, {bubbles: false});
+        this.fire('cancel-edit-comment-activity', {discussionid: this.discussionid});
       },
 
       closeActivity: function() {
@@ -291,9 +302,11 @@
         }
       },
 
-      saveActivity: function() {
+      saveCommentActivity: function() {
+        console.log('hello')
         var obj = {
-          file: this.file
+          file: this.file,
+          discussionid: this.discussionid
         };
 
         for (var i in this.boxes) {
@@ -320,7 +333,7 @@
         }
 
         this.closeActivity();
-        this.fire('save-edit-activity', obj, {bubbles: false});
+        this.fire('save-edit-comment-activity', obj);
       },
     })
   </script>

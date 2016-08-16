@@ -119,6 +119,12 @@
                 <template is="dom-if" if="{{signedIn}}">
                   <paper-tab on-tap="signOut">
                     Logout
+                    <template is="dom-if" if$="{{user.displayName}}">
+                      {{user.displayName}}
+                    </template>
+                    <template is="dom-if" if$="{{!user.displayName}}">
+                      {{user.uid}}
+                    </template>
                   </paper-tab>
                 </template>
               </template>
@@ -200,7 +206,7 @@
       },
 
       checkMenuAuth: function(auth, user) {
-        console.log(auth, user)
+        // console.log(auth, user)
         return !auth || user;
       },
 

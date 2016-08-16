@@ -4,6 +4,9 @@
 <link rel="import" href="../../../../../bower_components/polymerfire/firebase-query.html">
 <link rel="import" href="comment-block.html">
 <link rel="import" href="new-comment-block.html">
+<link rel="import" href="thumbnails-block.html">
+<script src="../../../../../bower_components/chance/chance.js"></script>
+<script src="../../../../../bower_components/underscore/underscore.js"></script>
 
 <dom-module id="discussion-block">
   <template>
@@ -20,6 +23,7 @@
 
       :host #discussion-block-content {
         padding: 10px;
+        margin-bottom: 5px;
       }
 
       :host .title {
@@ -46,6 +50,16 @@
         color: green;
 
       }
+
+      :host #thumbnails-block {
+        position: fixed;
+        width: 400px;
+        background-color: #FFF;
+      }
+
+      :host .by-line {
+        font-size: 0.7em;
+      }
     </style>
 
     <firebase-query
@@ -54,8 +68,8 @@
       data="{{commentdata}}">
     </firebase-query>
 
-    <paper-material>
-      <div class="horizontal layout center">
+    <paper-material on-mouseout="_mouseoutNode">
+      <div class="horizontal layout center" >
         <div class="time" on-tap="play">
           <template is="dom-if" if="{{!discussion.videolink}}">
             <iron-icon icon="icons:language"></iron-icon>
@@ -67,6 +81,10 @@
         <div class="flex">
           <div id="discussion-block-content">
             <h3 class="title" id="discussion-title">{{discussion.title}}</h3>
+            <div class="by-line">
+              By: {{randomName(task, user)}}<br/>
+              Created On: {{showDate(discussion.createdOn)}}
+            </div>
             <hr>
             <div class="text" id="discussion-text"></div>
           </div>
@@ -83,6 +101,7 @@
               id="new-comment-block"
               ui="[[ui]]"
               videoid="[[videoid]]"
+              task="[[task]]"
               discussionid = "[[discussion.$key]]"
               on-ready-edit-comment-activity="_readyEditActivity"
               on-edit-comment-activity="_editActivity"
@@ -96,15 +115,18 @@
               on-cancel-comment="_cancelComment"
               on-save-comment="_saveComment"
               user="[[user]]"
+              task-start="[[taskStart]]"
             ></new-comment-block>
           </template>
 
           <div class="comments">
             <template is="dom-repeat" items="{{commentdata}}">
-              <template is="dom-if" if="checkUI(item.ui)">
+              <template is="dom-if" if="checkUI(item.ui, task, user.uid, item.user)">
                 <comment-block
                   comment="{{item}}"
                   ui="[[ui]]"
+                  task="[[task]]"
+                  user="[[user]]"
                   on-mouseover-node="_openThumbnailBlock"
                   on-mouseout-node="_mouseoutNode"
                   on-tap-node="_openThumbnailBlock"
@@ -117,7 +139,13 @@
         </div>
       </div>
 
-
+      <template is="dom-if" if="{{viewThumbnailBlock}}" id="thumbnailblockif">
+        <thumbnails-block
+          id="thumbnails-block"
+          on-close-thumbnails-block="_mouseoutNode"
+          >
+        </thumbnails-block>
+      </template>
     </paper-material>
   </template>
 
@@ -141,23 +169,92 @@
         },
         user: {
           type: Object
+        },
+        task: {
+          type: String,
+          value: 'all'
+        },
+        viewThumbnailBlock: {
+          type: Boolean,
+          value: false
+        },
+        taskStart: {
+          type: Number
         }
       },
+
       observers: [
         '_renderDiscussionText(discussion.text)',
         'check(comments.*)'
       ],
+      listeners: [
+        'mouseout', '_mouseoutNode'
+      ],
+      showDate: function(utc) {
+        if (utc) {
+          return new Date(utc);
+        }
+        var month = parseInt(Math.random()*7, 10);
+        if (month === 0) month = 01
+        var day = parseInt(Math.random()*28, 10);
+        if (day === 0) day = 10;
+        if (day < 10) {
+          day = '0'+day.toString(10);
+        }
+        var hour = parseInt(Math.random()*23, 10);
+        if (hour < 10) {
+          hour = '0'+hour.toString(10)
+        }
+
+        var min = parseInt(Math.random()*59, 10);
+        if (min < 10) {
+          min = '0'+min.toString(10)
+        }
+
+        var sec = parseInt(Math.random()*59, 10);
+        if (sec < 10) {
+          sec = '0'+sec.toString(10)
+        }
+        return new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+      },
+
+      randomName: function(task, user) {
+        if (task === 'all') {
+          return chance.name() + " - aka: " + user.uid;
+        }
+        return chance.name()
+
+      },
+
+      getUTC: function() {
+        var t = new Date();
+        var y = t.getFullYear();
+        var m = t.getMonth();
+        var d = t.getDate();
+        var h = t.getHours();
+        var min = t.getMinutes();
+        var s = t.getSeconds();
+        var mil = t.getMilliseconds();
+
+        return Date.UTC(y, m, d, h, min, s, mil);
+      },
+      ready: function() {
+        this.taskStart = this.getUTC();
+      },
       timeToString: function(time) {
         return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
       },
-      checkUI: function(ui) {
-        return this.ui === ui;
+      isKorero: function(ui) {
+        return ui === 'korero';
+      },
+      checkUI: function(ui, task, uid, uid2) {
+        return this.ui === ui && (task === 'all' || uid === uid2);
       },
       play: function() {
-        this.fire('play-specific', {videostart: this.discussion.start, videoend: this.discussion.end}, {bubbles: false})
+        this.fire('play-specific', {videostart: this.discussion.start, videoend: this.discussion.end})
       },
       _renderDiscussion: function(data) {
-        console.log(data);
+        // console.log(data);
       },
       check: function(e) {
         console.log(e)
@@ -168,6 +265,10 @@
         var el = this.$$('#discussion-text');
         el.innerHTML = text;
         var nodes = Polymer.dom(el).childNodes;
+        this.renderNode(nodes);
+      },
+
+      renderNode: function(nodes) {
         for (var i in nodes) {
           if (nodes[i].getAttribute && nodes[i].getAttribute('data-node-id') && nodes[i].getAttribute('data-node-id').length > 0) {
             // var nodeId = nodes[i].getAttribute('data-node-id');
@@ -176,25 +277,58 @@
             node.addEventListener('mouseout', this._mouseoutNode.bind(this));
             node.addEventListener('tap', this._tapNode.bind(this));
           }
-        }
 
+          var n = Polymer.dom(nodes[i]).childNodes;
+          this.renderNode(n)
+        }
       },
       _mouseoverNode: function(e) {
+        // this._mouseoutNode();
         if (this.ui === 'korero') {
           var nodeId = e.target.getAttribute('data-node-id');
+          var element = e.target;
+          var box = e.target.getBoundingClientRect();
+          // console.log(box);
           var node = this.discussion.nodes[nodeId];
-          this.fire('mouseover-node', {node: node, text: e.target.innerHTML}, {bubbles: false});
+          this.viewThumbnailBlock = true;
+          setTimeout(function(){
+            this.$$('#thumbnails-block').setNode(node, element.innerHTML, false, false);
+            this.$$('#thumbnails-block').setAttribute('style', `left: ${box.left - 200}px; top: ${box.top + 20}px; z-index: 100`);
+          }.bind(this), 100);
+          // this.fire('mouseover-node', {node: node, text: e.target.innerHTML});
         }
       },
-      _mouseoutNode: function(e) {
-        this.fire('mouseout-node', {}, {bubbles: false});
+
+      _mouseMove: function(e) {
+        // this.$$('#thumbnails-block').setNode();
+        // _.debounce(function(){
+        //   console.log(this.viewThumbnailBlock)
+        //   if (this.viewThumbnailBlock) {
+        //     this.$$('#thumbnails-block').setNode();
+        //   }
+        //   this.set('viewThumbnailBlock',false);
+        // }.bind(this), 100).apply(this);
+
       },
+
+      _mouseoutNode: function(e) {
+        if (this.viewThumbnailBlock) {
+          this.$$('#thumbnails-block').setNode();
+        }
+        this.set('viewThumbnailBlock',false);
+        if (this.$$('#thumbnails-block')) {
+          this.$$('#thumbnails-block').setAttribute('style', `display: none`);
+        }
+        // this.fire('mouseout-node', {});
+      },
+
       _tapNode: function(e) {
+        this._mouseoutNode();
+        var nodeId = e.target.getAttribute('data-node-id');
+        var node = this.discussion.nodes[nodeId];
         if (this.ui === 'korero') {
-          this.fire('close-edit-activity', {}, {bubbles: false});
-          var nodeId = e.target.getAttribute('data-node-id');
-          var node = this.discussion.nodes[nodeId];
-          this.fire('mouseover-node', {node: node, text: e.target.innerHTML, open: true}, {bubbles: false});
+          this.fire('close-edit-activity', {});
+          this.fire('tap-node', {node: node, text: e.target.innerHTML, open: true});
         } else {
           for (var i in node.refers) {
             if (node.refers[i].file) {
@@ -206,15 +340,15 @@
 
       },
       _readyEditActivity: function() {
-        this.fire('ready-edit-comment-activity', {}, {bubbles: false});
+        // this.fire('ready-edit-comment-activity', {});
       },
       _editActivity: function(e) {
         // if (e.model) {
-        //   this.fire('edit-comment-activity', e.detail, {bubbles: false});
+        //   this.fire('edit-comment-activity', e.detail);
         // }
       },
       _closeEditActivity: function() {
-        this.fire('close-edit-comment-activity', {}, {bubbles: false});
+        // this.fire('close-edit-comment-activity', {});
       },
       cancelEditActivity: function() {
         this.$$('#new-comment-block').cancelEditActivity();
@@ -226,25 +360,32 @@
         this.viewNewCommentBlock = true;
         setTimeout(function(){
           this.$$('#new-comment-block').newComment();
-        }.bind(this), 100);
+          if (this.ui === 'adi') {
+            this.fire('new-comment', {discussionid: this.discussion.$key});
+          }
 
+        }.bind(this), 100);
+      },
+      changeCommentTime: function(data) {
+        if (this.viewNewCommentBlock) {
+          this.$$('#new-comment-block').changeCommentTime(data);
+        }
       },
       _openThumbnailBlock: function(e) {
-        console.log(e.detail)
-        this.fire('open-thumbnail-block', e.detail, {bubbles: false});
+        this.fire('open-thumbnail-block', e.detail);
       },
       closedThumbnailBlock: function() {
         if (this.viewNewCommentBlock) {
           this.$$('#new-comment-block').closedThumbnailBlock();
         }
       },
-      referMore() {
+      referMore: function() {
         if (this.viewNewCommentBlock) {
           this.$$('#new-comment-block').referMore();
         }
       },
       _startCommentLinking: function(e) {
-        this.fire('start-comment-linking', e.detail, {bubbles: false});
+        // this.fire('start-comment-linking', e.detail);
       },
       saveLinking: function(data) {
         if (this.viewNewCommentBlock) {
@@ -253,10 +394,14 @@
       },
       _cancelComment: function() {
         this.viewNewCommentBlock = false;
+        // this.fire('close-discussion', {}, {});
       },
       _saveComment: function() {
         this._cancelComment();
-      }
+      },
+      _removeThumbnailBlock: function() {
+
+      },
     })
   </script>
 </dom-module>

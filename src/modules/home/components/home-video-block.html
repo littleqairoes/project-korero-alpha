@@ -1,0 +1,118 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/google-youtube/google-youtube.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+
+
+<dom-module id="home-video-block">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+
+      :host #video-content {
+        min-width: 320px;
+      }
+
+    </style>
+    <div class="container" id="container-panel">
+      <div style="margin-top: 20px">
+        <google-youtube
+          width="100%"
+          id="video-content"
+          video-id="[[videoid]]"
+          chromeless
+          on-google-youtube-ready="videoReady"
+          currenttime="{{videotime}}">
+        </google-youtube>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'home-video-block',
+      properties: {
+        videotime: {
+          type: Number,
+          observer: "changeVideoTime"
+        },
+        videoid: {
+          type: String
+        },
+        linking: {
+          type: Boolean
+        },
+        linkVideoStart: {
+          type: Number
+        },
+        linkVideoEnd: {
+          type: Number
+        },
+        videoLoaded: {
+          type: Boolean,
+          value: false
+        }
+      },
+
+      attached: function() {
+        this._resize();
+        window.addEventListener('resize', this._resize.bind(this))
+      },
+
+      detached: function() {
+        window.removeEventListener('resize', this._resize.bind(this))
+      },
+
+      behaviors: [
+        Polymer.UtilsBehavior
+      ],
+
+      _resize: function() {
+        console.log('resized')
+        var height = ((this.$$('#video-content').getBoundingClientRect().width * 9) / 16)
+        this.$$('#video-content').setAttribute('height', `${height}px`);
+      },
+
+      play: function() {
+        this.$$('#video-content').play()
+      },
+
+      pause: function() {
+        this.$$('#video-content').pause()
+      },
+
+      videoReady: function() {
+        //var el = this.$$('#video-scrubber-area');
+        this._resize();
+        if (this.linkVideoStart) {
+
+        }
+        this.play();
+      },
+
+      stateChange: function(e) {
+        if (!this.videoLoaded && e.detail.data) {
+          this.videoLoaded = true;
+          // this.pause();
+          // console.log(this.videoLoaded);
+        }
+
+        if (e.detail.data === 1 && this.playspecific) {
+          this.changeSpecificTime();
+        }
+      },
+
+      changeVideoTime: function(time) {
+        if (this.linking) {
+          if (time >= this.linkVideoEnd) {
+            this.$$('#video-content').seekTo(this.linkVideoStart);
+            this.play();
+          } else if (time < this.linkVideoStart) {
+            this.$$('#video-content').seekTo(this.linkVideoStart);
+            this.play();
+          }
+        }
+      },
+
+    })
+  </script>
+</dom-module>
