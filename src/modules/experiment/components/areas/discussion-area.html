@@ -99,6 +99,8 @@
               on-edit-comment-activity="_editCommentActivity"
               on-open-thumbnail-block="_openThumbnailBlock"
               on-start-comment-linking="_startLinking"
+              on-change-task-start="_changeTaskStart"
+              participant="[[participant]]"
               user="[[user]]"
             ></discussion-block>
           </template>
@@ -123,6 +125,8 @@
               on-open-thumbnail-block="_openThumbnailBlock"
               on-start-comment-linking="_startLinking"
               on-play-specific="_playSpecific"
+              on-change-task-start="_changeTaskStart"
+              participant="[[participant]]"
               user="[[user]]"
             ></discussion-block>
           </template>
@@ -205,6 +209,10 @@
         task: {
           type: String,
           value: 'all'
+        },
+        participant: {
+          type: String,
+          value: 'user'
         }
       },
       // observers: [
@@ -224,6 +232,10 @@
 
       detached: function() {
         window.removeEventListener('resize', this._resize.bind(this))
+      },
+
+      _changeTaskStart: function(e) {
+        this.fire('change-task-start', e.detail);
       },
       _resize: function() {
         this.$$('#discussion-area-content').setAttribute('style', `height: ${this.windowSize().height - 64}px`);

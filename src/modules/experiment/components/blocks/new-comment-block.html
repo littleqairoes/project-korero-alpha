@@ -499,10 +499,13 @@
         }
 
         var ref = '/korero/' + this.videoid + "/comments/" + this.discussionid + "/comment-" + this.ui + "-" + chance.string({pool: 'abcdefghijklmnopqrstuvwxyz', length: 20})
-
+        var finishTimeSec = (this.discussion.taskEnd - this.discussion.taskStart)/1000;
+        var min = parseInt(finishTimeSec/60, 10);
+        var sec = parseInt(finishTimeSec%60, 10);
+        sec = sec < 10 ? '0' + sec : sec;
         firebase.database().ref(ref).set(this.discussion).then(function(){
           this.$.toaster.show('Saved');
-          this.fire('save-comment', {});
+          this.fire('save-comment', {finishTime: min+':'+sec});
         }.bind(this)).catch(function(err){
           this.$.toaster.show(err.message);
         }.bind(this));

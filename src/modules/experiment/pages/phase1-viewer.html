@@ -1,0 +1,158 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../../bower_components/app-route/app-route.html">
+<link rel="import" href="../../../configs/behaviors/utils-behavior.html">
+<link rel="import" href="../../../../bower_components/polymerfire/firebase-query.html">
+
+<dom-module id="phase1-viewer">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .discussion-area {
+        min-width: 320px;
+        width: 35%;
+      }
+
+      :host .activity-area {
+        min-width: 320px;
+      }
+    </style>
+
+    <app-route
+      route="{{pageRoute}}"
+      pattern="/:videoid"
+      data="{{pageData}}"
+      tail="{{subroute}}">
+    </app-route>
+
+    <app-route
+      route="{{subroute}}"
+      pattern="/:task"
+      data="{{taskData}}"
+      tail="{{subsubroute}}">
+    </app-route>
+
+    <app-route
+      route="{{subsubroute}}"
+      pattern="/:ui"
+      data="{{uiData}}"
+      tail="{{subsubsubroute}}">
+    </app-route>
+
+    <template is="dom-if" if="{{user}}">
+      <firebase-query
+        id="query"
+        path="/korero/[[videoid]]/comments"
+        data="{{discussions}}">
+      </firebase-query>
+      <div style="margin: 10px">
+        <b>For Task:</b><br/>
+        <template is="dom-repeat" items="{{discussions}}">
+          <template is="dom-repeat" items="{{arrayComments(item)}}" as="comment">
+            <template is="dom-if" if="{{checkTask(comment, task)}}">
+              [[comment.user]] - [[comment.participantNumber]] - [[comment.ui]] - [[comment.task]] - [[speed(comment)]]<br/>
+            </template>
+          </template>
+
+        </template>
+      </div>
+      <div style="margin: 10px">
+
+
+        <b>For UI:</b><br/>
+        <template is="dom-repeat" items="{{discussions}}">
+          <template is="dom-repeat" items="{{arrayComments(item)}}" as="comment">
+            <template is="dom-if" if="{{filterUi(comment, checkUi)}}">
+              [[comment.user]] - [[comment.participantNumber]] - [[comment.ui]] - [[comment.task]] - [[speed(comment)]]<br/>
+            </template>
+          </template>
+        </template>
+      </div>
+    </template>
+
+  </template>
+  <script>
+    Polymer({
+      is: 'phase1-viewer',
+      properties: {
+        videoid: {
+          type: String,
+          reflectToAttribute: true
+        },
+        ui: {
+          type: String
+        },
+        checkUi: {
+          type: String
+        },
+        uiData: {
+          type: Object
+        },
+        pageData: {
+          type: Object
+        },
+        taskData: {
+          type: Object
+        },
+        pageRoute: {
+          type: Object
+        },
+        user: {
+          type: Object
+        },
+        task: {
+          type: String,
+          notify: true,
+          value: 'all'
+        },
+        comments: {
+          type: Object
+        },
+        discussions: {
+          type: Object
+        }
+      },
+      observers: [
+        '_pageDataChanged(pageData.videoid)',
+        '_taskDataChanged(taskData.task)',
+        '_uiDataChanged(uiData.ui)'
+      ],
+      arrayComments: function(discussions) {
+        var array = [];
+        for (var i in discussions) {
+          console.log(discussions[i]);
+          array.push(discussions[i])
+        }
+        return array
+      },
+      speed: function(item) {
+        if (item.taskStart && item.taskEnd) {
+          return ((item.taskEnd - item.taskStart)/1000).toString(10) + ' sec'
+        } else {
+          return 'Didn\'t record'
+        }
+      },
+      checkTask: function(item, task) {
+        return item.taskStart && item.user && (task === 'all' || (item.task === task));
+      },
+      filterUi: function(item, ui) {
+        return item.taskStart && item.user && (ui === 'all' || item.ui === ui)
+      },
+      _uiDataChanged(ui) {
+        this.checkUi = ui || 'all';
+      },
+      _pageDataChanged: function(id) {
+        this.videoid = id || 'UieTvd7jU0E';
+        console.log(this.videoid)
+      },
+      _taskDataChanged: function(task) {
+        if (task) {
+          this.task = task || 'all'
+        } else {
+          this.task = 'all'
+        }
+      },
+
+
+    });
+  </script>
+</dom-module>

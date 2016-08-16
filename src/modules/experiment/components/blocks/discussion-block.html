@@ -1,6 +1,7 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../../../../../bower_components/polymerfire/firebase-query.html">
 <link rel="import" href="comment-block.html">
 <link rel="import" href="new-comment-block.html">
@@ -59,6 +60,10 @@
 
       :host .by-line {
         font-size: 0.7em;
+      }
+
+      :host #dialog {
+        padding: 20px;
       }
     </style>
 
@@ -121,7 +126,7 @@
 
           <div class="comments">
             <template is="dom-repeat" items="{{commentdata}}">
-              <template is="dom-if" if="checkUI(item.ui, task, user.uid, item.user)">
+              <template is="dom-if" if="{{checkUI(item, task, user, ui, participant)}}">
                 <comment-block
                   comment="{{item}}"
                   ui="[[ui]]"
@@ -148,6 +153,15 @@
         </thumbnails-block>
       </template>
     </paper-material>
+
+    <paper-dialog id="dialog">
+      <h2>Instruction</h2>
+      <p>
+        You have taken {{finishTime}} minute to write the reply.
+        Fill in the questionnaire questions for this trial, and click OK to close this window
+      </p>
+      <paper-button on-tap="doneBlock" raised>Ok</paper-button>
+    </paper-dialog>
   </template>
 
   <script>
@@ -174,6 +188,10 @@
         task: {
           type: String,
           value: 'all'
+        },
+        participant: {
+          type: String,
+          value: 'user'
         },
         viewThumbnailBlock: {
           type: Boolean,
@@ -241,6 +259,11 @@
       },
       ready: function() {
         this.taskStart = this.getUTC();
+        console.log(this.discussion.task, this.task, this.discussion.task === this.task)
+        if (this.discussion.task === this.task) {
+          console.log(this.discussion.task, this.task, this.discussion.task === this.task)
+          this.fire('change-task-start', {taskStart: this.taskStart});
+        }
       },
       timeToString: function(time) {
         return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);
@@ -248,8 +271,9 @@
       isKorero: function(ui) {
         return ui === 'korero';
       },
-      checkUI: function(ui, task, uid, uid2) {
-        return this.ui === ui && (task === 'all' || uid === uid2);
+      checkUI: function(item, task, user, ui, participant) {
+        console.log(participant)
+        return ui === item.ui && (task === 'all' || (participant === 'user' && user.uid === item.user) || participant === item.user || participant === item.participantNumber);
       },
       play: function() {
         this.fire('play-specific', {videostart: this.discussion.start, videoend: this.discussion.end})
@@ -396,10 +420,15 @@
       },
       _cancelComment: function() {
         this.viewNewCommentBlock = false;
-        // this.fire('close-discussion', {}, {});
+        this.fire('close-discussion', {}, {});
       },
-      _saveComment: function() {
+      _saveComment: function(e) {
+        this.finishTime = e.detail.finishTime;
+        this.$.dialog.open();
         this._cancelComment();
+      },
+      doneBlock: function() {
+        window.close();
       },
       _removeThumbnailBlock: function() {
 

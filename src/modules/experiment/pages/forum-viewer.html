@@ -32,6 +32,13 @@
       tail="{{subsubroute}}">
     </app-route>
 
+    <app-route
+      route="{{subsubroute}}"
+      pattern="/:participant"
+      data="{{participantData}}"
+      tail="{{subsubsubroute}}">
+    </app-route>
+
     <template is="dom-if" if="{{user}}">
       <div class="horizontal layout fullbleed wrap">
         <div class="flex discussion-area">
@@ -41,7 +48,7 @@
             ui="[[ui]]"
             user="[[user]]"
             task="[[task]]"
-
+            participant="[[participant]]"
           ></discussion-area>
         </div>
       </div>
@@ -75,11 +82,15 @@
           type: String,
           notify: true,
           value: 'all'
+        },
+        participant: {
+          type: String
         }
       },
       observers: [
         '_pageDataChanged(pageData.videoid)',
-        '_taskDataChanged(taskData.task)'
+        '_taskDataChanged(taskData.task)',
+        '_participantDataChanged(participantData.participant)'
       ],
       _newDiscussion: function() {
         this.$$('#activity-area').newDiscussion();
@@ -95,14 +106,14 @@
         console.log(this.videoid)
       },
       _taskDataChanged: function(task) {
-        console.log(task)
         if (task) {
           this.task = task || 'all'
         } else {
           this.task = 'all'
         }
-
-        console.log(this.task)
+      },
+      _participantDataChanged: function(participant) {
+        this.participant = participant || 'user'
       },
       _readyEditActivity: function() {
         this.$$('#activity-area').openEditActivity();

@@ -53,6 +53,10 @@
         padding-right: 10px;
         padding-left: 10px;
       }
+
+      :host .pdf-overall {
+        max-width: 820px;
+      }
     </style>
 
 
@@ -100,6 +104,12 @@
             data="{{materialObject}}">
           </firebase-document>
 
+          <firebase-document
+            id="pdfdoc"
+            path="/experiment/pdfs/{{material}}"
+            data="{{pdfObject}}">
+          </firebase-document>
+
           <div class="">
             <div class="post-text">
               POST: {{seqObject.text}}
@@ -132,23 +142,28 @@
                 </div>
               </template>
 
-              <template is="dom-repeat" items="{{pdfSegments}}">
-                <div class="flex pdf-segement">
-                  <div class="sub-instruction">
-                    {{item.instruction}}
-                  </div>
-                  <div class="">
-                    <home-pdf-block file="[[item.pdf]]"></home-pdf-block>
-                  </div>
-                  <div class="sub-instruction">
-                    [[getSubInstruction(item)]]
-                  </div>
-                  <div class="sub-instruction">
-                    PDF Link:<br/>
-                    <a href="[[item.pdf]]" target="_blank">[[item.pdf]]</a>
-                  </div>
+              <div class="flex pdf-overall">
+                <div class="horizontal layout">
+                  <template is="dom-repeat" items="{{pdfSegments}}">
+                    <div class="flex pdf-segement">
+                      <div class="sub-instruction">
+                        {{item.instruction}}
+                      </div>
+                      <div class="">
+                        <home-pdf-block file="[[item.pdf]]"></home-pdf-block>
+                      </div>
+                      <div class="sub-instruction">
+                        [[getSubInstruction(item)]]
+                      </div>
+                    </div>
+                  </template>
                 </div>
-              </template>
+                <div class="sub-instruction">
+                  PDF Link:<br/>
+                  <a href="[[pdfMaterial]]" target="_blank">[[pdfMaterial]]</a>
+                </div>
+              </div>
+
             </div>
             <div class="horizontal layout center">
               <div class="flex"></div>
@@ -204,6 +219,9 @@
         materialObject: {
           type: Object
         },
+        pdfObject: {
+          type: Object
+        },
         setArray: {
           type: Array
         },
@@ -223,6 +241,9 @@
         materialValue: {
           type: String
         },
+        pdfMaterial: {
+          type: String
+        },
         videoSegments: {
           type: Array
         },
@@ -240,6 +261,7 @@
         // '_check(setData.*)',
         '_check(pageRoute)',
         '_setMaterialValue(materialObject.*)',
+        '_setPdfValue(pdfObject.*)',
         '_setDataChanged(setData.setNumber)',
         '_blockDataChanged(blockData.blockNumber)',
         '_seqDataChanged(seqData.seqNumber)',
@@ -299,6 +321,12 @@
       _setMaterialValue: function(e) {
         if (e && e.value) {
           this.materialValue = e.value;
+        }
+      },
+
+      _setPdfValue: function(e) {
+        if (e && e.value) {
+          this.pdfMaterial = e.value;
         }
       },
 
