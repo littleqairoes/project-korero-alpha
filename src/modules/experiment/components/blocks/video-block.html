@@ -303,7 +303,7 @@
         var elRect = el.getBoundingClientRect();
         var scrubPos = (e.detail.x - elRect.left) / elRect.width
 
-        this.$$('#video-thumbnail').setAttribute('style', `display: block; left: ${scrubPos * 100}%; top: -90px`);
+        this.$$('#video-thumbnail').setAttribute('style', `display: block; left: ${scrubPos * 100}%; top: -105px`);
 
 
         var time = this.videoduration * scrubPos
