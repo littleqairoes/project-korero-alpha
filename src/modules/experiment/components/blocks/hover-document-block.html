@@ -43,7 +43,7 @@
         var imageObj = new Image();
         var el = this.$$('#hover-activity');
         var box = el.getBoundingClientRect()
-        console.log(box)
+        // console.log(box)
         imageObj.onload = function() {
           canvas.width = box.width;
           canvas.height = (this.height / this.width) * canvas.width
@@ -61,8 +61,12 @@
             context.strokeStyle="red";
             context.rect(left, top, width, height);
             context.stroke();
-            el.scrollTop = (top - 200);
-            console.log(el.scrollTop)
+            setTimeout(function() {
+              if (el) {
+                el.scrollTop = (top - 200);
+                console.log(el.scrollTop)
+              }
+            }.bind(this), 200)
             // el.scrollTo(0, data.top);
           }
         };

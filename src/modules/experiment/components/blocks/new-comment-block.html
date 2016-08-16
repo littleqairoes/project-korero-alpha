@@ -284,6 +284,9 @@
             refers: {}
           };
           this.selected.range.deleteContents();
+          var node = document.createElement('span');
+          node.innerHTML='&#8203;'
+          this.selected.range.insertNode(node);
           this.selected.range.insertNode(this.node);
           this.viewOptions = false;
           this.viewRefer = true;
@@ -330,7 +333,7 @@
           };
           this.node.classList = ['hover'];
           this.node.addEventListener('mouseover', this._mouseoverNode.bind(this));
-          this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+          // this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
           this.node.addEventListener('tap', this._tapNode.bind(this));
           this.node = null;
         }

@@ -42,7 +42,8 @@
           type: Boolean
         },
         linkVideoStart: {
-          type: Number
+          type: Number,
+          observer: 'change'
         },
         linkVideoEnd: {
           type: Number
@@ -66,6 +67,12 @@
         Polymer.UtilsBehavior
       ],
 
+      change: function(e) {
+        if (e != null || e != undefined) {
+          this.linking = true;
+        }
+      },
+
       _resize: function() {
         console.log('resized')
         var height = ((this.$$('#video-content').getBoundingClientRect().width * 9) / 16)
@@ -84,7 +91,7 @@
         //var el = this.$$('#video-scrubber-area');
         this._resize();
         if (this.linkVideoStart) {
-
+          this.$$('#video-content').seekTo(this.linkVideoStart);
         }
         this.play();
       },

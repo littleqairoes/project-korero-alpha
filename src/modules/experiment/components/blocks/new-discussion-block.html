@@ -213,13 +213,15 @@
       },
 
       commentChange: function(e) {
+        console.log(e)
         if (this.node) {
           this.checkNode();
         }
+        // e.target.focus();
         this.selected = this.showSelectionDiv();
         this.viewOptions = true;
         this.viewRefer = false;
-        this.openHover();
+        this.openHover(e);
       },
 
       checkNode: function() {
@@ -244,7 +246,7 @@
         }
       },
 
-      openHover: function() {
+      openHover: function(e) {
         if (this.selected.text && this.selected.text.length > 0) {
           var elRect = this.$$('#new-discussion-block-content').getBoundingClientRect();
           var top = (this.selected.pos.top - elRect.top) + this.selected.pos.height + 64;
@@ -255,6 +257,12 @@
           this.$$('#options').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`);
         } else {
           this.$$('#options').setAttribute('style', `display: none`);
+          // // this.selected.range.setStartAfter(e.target);
+          // this.selected.range.collapse(true);
+          // var range = this.selected.range;
+          // this.selected.selected.removeAllRanges();
+          // this.selected.selected.addRange(range);
+          // e.target.parentNode.focus();
         }
       },
 
@@ -279,6 +287,7 @@
       },
 
       refer: function(e) {
+
         if (this.selected.text && this.selected.text.length > 0) {
           this.node = document.createElement('span');
           this.node.innerHTML = this.selected.text;
@@ -289,7 +298,12 @@
             refers: {}
           };
           this.selected.range.deleteContents();
+          // this.selected.range.insertNode(document.createElement('span').innerHTML=" ");
+          var node = document.createElement('span');
+          node.innerHTML='&#8203;'
+          this.selected.range.insertNode(node);
           this.selected.range.insertNode(this.node);
+
           this.viewOptions = false;
           this.viewRefer = true;
         }
@@ -336,7 +350,7 @@
 
           this.node.classList = ['hover'];
           this.node.addEventListener('mouseover', this._mouseoverNode.bind(this));
-          this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
+          // this.node.addEventListener('mouseout', this._mouseoutNode.bind(this));
           this.node.addEventListener('tap', this._tapNode.bind(this));
           this.node = null;
         }
@@ -395,7 +409,7 @@
           var nodeId = e.target.getAttribute('data-node-id');
           var element = e.target;
           var box = e.target.getBoundingClientRect();
-          console.log(box);
+          // console.log(box);
           var node = this.discussion.nodes[nodeId];
           this.viewThumbnailBlock = true;
           setTimeout(function(){
@@ -491,6 +505,7 @@
       },
 
       post: function() {
+        // console.log(this.$$('#text').innerHTML)
         this.set('discussion.title', this.$$('#title').value);
         this.set('discussion.text', this.$$('#text').innerHTML);
         this.set('discussion.user', this.user.uid);

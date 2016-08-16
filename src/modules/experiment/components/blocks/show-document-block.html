@@ -113,19 +113,33 @@
         var canvas = this.$$('#hover-canvas');
         var context = canvas.getContext('2d');
         var imageObj = new Image();
-        var el = this.$$('#hover-activity');
+        var el = this.$$('#show-activity');
+        console.log(el)
+        var box = el.getBoundingClientRect()
+        // console.log(box)
         imageObj.onload = function() {
-          canvas.height = this.height;
-          canvas.width = this.width;
-          context.drawImage(this, 0, 0);
+          canvas.width = box.width;
+          canvas.height = (this.height / this.width) * canvas.width
+          context.drawImage(this, 0, 0, canvas.width, canvas.height);
+          var oldHeight = data.pageHeight ? data.pageHeight : canvas.height;
+          var oldWidth = data.pageWidth ? data.pageWidth : canvas.width
+          var top = (data.top * canvas.height) / oldHeight;
+          var left = (data.left * canvas.width) / oldWidth;
+          var width = (data.width * canvas.width) / oldWidth;
+          var height = (data.height * canvas.height) / oldHeight;
+
           if (data.left) {
             context.beginPath();
             context.lineWidth="4";
             context.strokeStyle="red";
-            context.rect(data.left, data.top, data.width, data.height);
+            context.rect(left, top, width, height);
             context.stroke();
-            el.scrollTop = (data.top - 200);
-            console.log(el.scrollTop)
+            setTimeout(function() {
+              if (el) {
+                el.scrollTop = (top - 200);
+                console.log(el.scrollTop)
+              }
+            }.bind(this), 200)
             // el.scrollTo(0, data.top);
           }
         };
