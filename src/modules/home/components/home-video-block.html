@@ -12,6 +12,23 @@
         min-width: 320px;
       }
 
+      :host .scrubber-area {
+        margin-top: 10px;
+        height: 5px;
+        background-color: #AAA;
+        width: 100%;
+        position: relative;
+        cursor: pointer;
+      }
+
+      :host #video-play-time {
+        height: 5px;
+        position: relative;
+        background-color: red;
+        width: 0px;
+        opacity: 0.5;
+      }
+
     </style>
     <div class="container" id="container-panel">
       <div style="margin-top: 20px">
@@ -21,8 +38,16 @@
           video-id="[[videoid]]"
           chromeless
           on-google-youtube-ready="videoReady"
+          duration="{{videoduration}}"
           currenttime="{{videotime}}">
         </google-youtube>
+
+        <div
+          class="scrubber-area"
+          id="video-scrubber-area"
+        >
+          <div id="video-play-time"></div>
+        </div>
       </div>
     </div>
   </template>
@@ -93,6 +118,7 @@
         if (this.linkVideoStart) {
           this.$$('#video-content').seekTo(this.linkVideoStart);
         }
+        this.$$('#video-content').mute();
         this.play();
       },
 
@@ -109,12 +135,23 @@
       },
 
       changeVideoTime: function(time) {
+        var elPlayTime = this.$$('#video-play-time');
+        if (this.linkVideoStart) {
+          elPlayTime.setAttribute('style', `width: ${((time - this.linkVideoStart)/(this.linkVideoEnd - this.linkVideoStart))*100}%`);
+        } else {
+          elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
+        }
+
+
+
         if (this.linking) {
           if (time >= this.linkVideoEnd) {
             this.$$('#video-content').seekTo(this.linkVideoStart);
+            elPlayTime.setAttribute('style', `width: 0%`);
             this.play();
           } else if (time < this.linkVideoStart) {
             this.$$('#video-content').seekTo(this.linkVideoStart);
+            elPlayTime.setAttribute('style', `width: 0%`);
             this.play();
           }
         }

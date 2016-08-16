@@ -50,6 +50,8 @@
 
       :host .pdf-segement, .video-segment {
         max-width: 400px;
+        padding-right: 10px;
+        padding-left: 10px;
       }
     </style>
 
@@ -103,7 +105,7 @@
               POST: {{seqObject.text}}
             </div>
             <div class="instruction">
-              Reply by referring to these segments in these materials. Your reply should be succint and easy for readers to locate these segments in these materials.
+              {{getMajorInstruciton(blockNumber)}}
             </div>
 
             <div class="horizontal layout">
@@ -151,7 +153,7 @@
             <div class="horizontal layout center">
               <div class="flex"></div>
                 <div class="buttons">
-                  <a href="/experiment/[[seqObject.interface]]/[[materialValue]]/[[task]]" target="interface">
+                  <a href="/experiment/[[seqObject.interface]]/[[materialValue]]/[[task]]" target="_blank">
                     <paper-button raised>Open Interface</paper-button>
                   </a>
                 </div>
@@ -242,6 +244,21 @@
         '_blockDataChanged(blockData.blockNumber)',
         '_seqDataChanged(seqData.seqNumber)',
       ],
+
+      getMajorInstruciton: function(blockNumber) {
+        if (blockNumber === 'demo') {
+          return "Reply by referring to these segments in these materials. Your reply should be succint and easy for readers to locate these segments in these materials."
+        } else if (blockNumber === 'b1') {
+          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+        } else if (blockNumber === 'b2') {
+          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+        } else if (blockNumber === 'b3') {
+          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+        } else if (blockNumber === 'b4') {
+          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+        }
+        // return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+      },
 
       getSubInstruction: function(item) {
         return item['sub-instruction'];
