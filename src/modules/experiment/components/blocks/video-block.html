@@ -9,6 +9,8 @@
 <link rel="import" href="../../../../../bower_components/iron-icons/hardware-icons.html">
 <link rel="import" href="../../../../configs/behaviors/utils-behavior.html">
 <script src="../../../../../bower_components/underscore/underscore.js"></script>
+<script src="../../../../../bower_components/chance/chance.js"></script>
+<script src="../../../../../fabric.js/fabric.js"></script>
 
 <dom-module id="video-block">
   <template>
@@ -43,7 +45,7 @@
         height: 5px;
         position: absolute;
         background-color: blue;
-        width: 100%;
+        width: 0%;
         top: 0px;
         opacity: 0.5;
       }
@@ -99,12 +101,21 @@
         display: none;
       }
 
+      :host #container-video {
+        position: relative;
+      }
+
+      :host #canvas {
+        position: absolute;
+        top: 0px;
+      }
+
     </style>
 
     <div class="container" id="container-panel">
       <div class="horizontal layout center">
 
-        <div class="flex" style="margin-top: 20px">
+        <div class="flex" style="margin-top: 20px" id="container-video">
           <google-youtube
             width="100%"
             id="video-content"
@@ -265,6 +276,12 @@
         videoLoaded: {
           type: Boolean,
           value: false
+        },
+        canvas: {
+          type: Object
+        },
+        boxes :{
+          type: Object
         }
       },
 
@@ -312,46 +329,53 @@
 
 
         if (this.linking) {
-          if (this.linkVideoStart == null || this.linkVideoEnd == null) {
-            this.linkVideoStart = 0;
-            this.linkVideoEnd = this.videoduration;
-          }
-          if (time <= this.linkVideoStart + (((this.linkVideoEnd - this.linkVideoStart) / 2))) {
-            this.linkVideoStart = time;
-          } else {
-            this.linkVideoEnd = time;
-          }
+          this.linkVideoStart = time;
+          this.linkVideoEnd = time;
+          // if (this.linkVideoStart == null || this.linkVideoEnd == null) {
+          //   this.linkVideoStart = 0;
+          //   this.linkVideoEnd = this.videoduration;
+          // }
+          // if (time <= this.linkVideoStart + (((this.linkVideoEnd - this.linkVideoStart) / 2))) {
+          //   this.linkVideoStart = time;
+          // } else {
+          //   this.linkVideoEnd = time;
+          // }
           this.visualstart = this.timeToString(this.linkVideoStart);
           this.visualend = this.timeToString(this.linkVideoEnd);
           this.changeLinkVideoTime();
           this.$$('#video-content').seekTo(this.linkVideoStart);
 
         } else if (this.discussionlink) {
-          if (this.discussionstart != undefined || this.discussionstart != null) {
-            if (time <= this.discussionstart + (((this.discussionend - this.discussionstart) / 2))) {
-              this.discussionstart = time;
-            } else {
-              this.discussionend = time;
-            }
-          } else {
-            this.discussionstart = time;
-            this.discussionend = this.discussionstart + (this.videoduration * 0.05);
-          }
+          this.discussionstart = time;
+          this.discussionend = time;
+          // if (this.discussionstart != undefined || this.discussionstart != null) {
+          //   if (time <= this.discussionstart + (((this.discussionend - this.discussionstart) / 2))) {
+          //     this.discussionstart = time;
+          //   } else {
+          //     this.discussionend = time;
+          //   }
+          // } else {
+          //   this.discussionstart = time;
+          //   this.discussionend = this.discussionstart + (this.videoduration * 0.05);
+          // }
           this.visualstart = this.timeToString(this.discussionstart);
           this.visualend = this.timeToString(this.discussionend);
           this.changeDiscussionTime();
           this.$$('#video-content').seekTo(this.discussionstart);
         } else if (this.commentlink) {
-          if (this.commentstart != undefined || this.commentstart != null) {
-            if (time <= this.commentstart + (((this.commentend - this.commentstart) / 2))) {
-              this.commentstart = time;
-            } else {
-              this.commentend = time;
-            }
-          } else {
-            this.commentstart = time;
-            this.commentend = this.commentstart + (this.videoduration * 0.05);
-          }
+          this.commentstart = time;
+          this.commentend = time;
+
+          // if (this.commentstart != undefined || this.commentstart != null) {
+          //   if (time <= this.commentstart + (((this.commentend - this.commentstart) / 2))) {
+          //     this.commentstart = time;
+          //   } else {
+          //     this.commentend = time;
+          //   }
+          // } else {
+          //   this.commentstart = time;
+          //   this.commentend = this.commentstart + (this.videoduration * 0.05);
+          // }
           this.visualstart = this.timeToString(this.commentstart);
           this.visualend = this.timeToString(this.commentend);
           this.changeCommentTime();
@@ -372,10 +396,12 @@
       videoReady: function() {
         //var el = this.$$('#video-scrubber-area');
         this._resize();
+        this.$$('#video-content').setPlaybackQuality('medium');
         this.play();
       },
 
       videoThumbnailReady: function() {
+        this.$$('#video-thumbnail').setPlaybackQuality('small');
         this.$$('#video-thumbnail').play();
         this.$$('#video-thumbnail').mute();
       },
@@ -457,14 +483,99 @@
         elPlayTime.setAttribute('style', `left: ${(this.playstart/this.videoduration)*100}%; width: ${((this.playend - this.playstart)/this.videoduration)*100}%`);
       },
 
+      setCanvas: function(boxes, editable) {
+        var box = this.$$('#video-content').getBoundingClientRect();
+        var canvas = document.createElement('canvas');
+        canvas.setAttribute('id', 'canvas');
+        canvas.setAttribute('width', box.width);
+        canvas.setAttribute('height', box.height);
+        this.boxes = {};
+        Polymer.dom(this.$$('#container-video')).insertBefore(canvas, this.$$('#video-content-player-area'));
+
+        this.canvas = new fabric.Canvas(this.$$('#canvas'));
+
+        if (editable) {
+          this.canvas.on('mouse:down', function (option) {
+            var targetMove = false;
+            var target = null;
+
+            if (option.target) {
+              target = option.target;
+              this.canvas.on('mouse:move', function (option) {
+                this.boxes[target.id].top = target.top;
+                this.boxes[target.id].left = target.left;
+                this.boxes[target.id].height = target.height;
+                this.boxes[target.id].width = target.width;
+                var canvas = this.$$('#back-canvas');
+                this.boxes[id].thumbnail = canvas.toDataURL();
+                targetMove = true;
+              }.bind(this));
+            } else {
+              var startY = option.e.offsetY;
+              var startX = option.e.offsetX;
+              console.log(option.e)
+              var id;
+              do {
+                id = `${chance.string({pool: 'abcdefghijklmnopqrstuvwxyz'})}`;
+              } while (this.boxes[id]);
+
+              var obj = {
+                top : startY,
+                left : startX,
+                width : 0,
+                height : 0,
+                fill : 'transparent',
+                stroke: 'red',
+                strokewidth: 4,
+                id: id,
+                page: this.page,
+                pageWidth: this.canvas.width,
+                pageHeight: this.canvas.height
+              };
+
+              var rect = new fabric.Rect(obj);
+              this.boxes[id] = obj
+              this.canvas.add(rect);
+
+              this.canvas.on('mouse:move', function (option) {
+                var e = option.e;
+
+
+                this.boxes[id].width = e.offsetX - startX;
+                this.boxes[id].height = (e.offsetY - startY - 64) + this.$$('#edit-activity').scrollTop;
+                // console.log(startY, this.boxes[id].height, e.offsetY, e.screenY, e.screenY - startY - 64, this.$$('#edit-activity').scrollTop)
+                rect.set('width', this.boxes[id].width);
+                rect.set('height', this.boxes[id].height);
+                rect.setCoords();
+                var canvas = this.$$('#back-canvas');
+                this.boxes[id].thumbnail = canvas.toDataURL();
+              }.bind(this));
+            }
+
+            this.canvas.on('mouse:up', function (option) {
+              this.canvas.off('mouse:move');
+              if (!targetMove && target) {
+                delete(this.boxes[target.id]);
+                target.remove();
+              }
+              target = null;
+              targetMove = false;
+            }.bind(this));
+          }.bind(this));
+        }
+
+
+      },
+
       newDiscussion: function() {
         this.pause();
         this.discussionlink = true;
-        this.discussionstart = null;
-        this.discussionend = null;
+        this.discussionstart = this.videotime;
+        this.discussionend = this.videotime;
         if (this.ui === 'adi') {
           this.discussionstart = this.videotime;
-          this.discussionend = this.discussionstart + (this.videoduration * 0.05);
+          this.discussionend = this.videotime;
+          // this.discussionend = this.discussionstart + (this.videoduration * 0.05);
           this.visualstart = this.timeToString(this.discussionstart);
           this.visualend = this.timeToString(this.discussionend);
           this.changeDiscussionTime();
@@ -477,7 +588,7 @@
         this.pause();
         this.commentlink = true;
         this.commentstart = this.videotime;
-        this.commentend = this.commentstart + (this.videoduration * 0.05);
+        this.commentend = this.videotime;
         this.visualstart = this.timeToString(this.commentstart);
         this.visualend = this.timeToString(this.commentend);
         this.changeCommentTime();
@@ -539,18 +650,19 @@
         this.discussionid = data.discussionid
         this.linking = true;
         this.linkingEdit = true;
-        this.linkVideoStart = null;
-        this.linkVideoEnd = null;
-        this.visualstart = this.timeToString(0);
-        this.visualend = this.timeToString(this.videoduration);
-        setTimeout(function(){
-          if (this.$$('#start-play-time')) {
-            this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
-          }
-          if (this.$$('#end-play-time')) {
-            this.$$('#end-play-time').setAttribute('style', `left: 100%`);
-          }
-        }.bind(this), 300)
+        this.linkVideoStart = this.videotime;
+        this.linkVideoEnd = this.videotime;
+        this.visualstart = this.timeToString(this.videotime);
+        this.visualend = this.timeToString(this.videotime);
+        this.changeLinkVideoTime();
+        // setTimeout(function(){
+        //   if (this.$$('#start-play-time')) {
+        //     this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
+        //   }
+        //   if (this.$$('#end-play-time')) {
+        //     this.$$('#end-play-time').setAttribute('style', `left: 100%`);
+        //   }
+        // }.bind(this), 300)
 
         // this.linkVideoStart = this.videotime;
         // this.linkVideoEnd = this.linkVideoStart + (this.videoduration * 0.05);
@@ -609,15 +721,15 @@
           obj.discussionid = this.discussionid
         }
         this.fire('save-linking', obj, {bubbles: false});
-        this.linkVideoStart = null;
-        this.linkVideoEnd = null;
-        this.visualend = null;
-        this.visualstart = null;
-        this.visualstart = this.timeToString(0);
-        this.visualend = this.timeToString(this.videoduration);
+        this.linkVideoStart = this.videotime;
+        this.linkVideoEnd = this.videotime;
+        this.visualend = this.videotime;
+        this.visualstart = this.videotime;
+        this.visualstart = this.timeToString(this.videotime);
+        this.visualend = this.timeToString(this.videotime);
         this.changeLinkVideoTime();
-        this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
-        this.$$('#end-play-time').setAttribute('style', `left: 100%`);
+        // this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
+        // this.$$('#end-play-time').setAttribute('style', `left: 100%`);
         this.pause();
       },
 

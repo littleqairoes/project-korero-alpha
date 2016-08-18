@@ -49,7 +49,7 @@
       }
 
       :host .pdf-segement, .video-segment {
-        max-width: 400px;
+        max-width: 600px;
         padding-right: 10px;
         padding-left: 10px;
       }
@@ -127,18 +127,11 @@
                     </div>
                     <home-video-block videoid="[[materialValue]]" link-video-start="[[item.start]]" link-video-end="[[item.end]]"></home-video-block>
                   </template>
-                  <template is="dom-if" if="{{_isForum(seqObject.interface)}}">
-                    <div class="sub-instruction">
-                      Video Link:<br/>
-                      <a href="/experiment/video/{{materialValue}}/" target="_blank">{{getHostname()}}/experiment/video/{{materialValue}}/</a>
-                    </div>
-                  </template>
-                  <template is="dom-if" if="{{!_isForum(seqObject.interface)}}">
-                    <div class="sub-instruction">
-                      Video Link:<br/>
-                      Included in the Interface
-                    </div>
-                  </template>
+                  <div class="sub-instruction">
+                    Video Link:<br/>
+                    <a href="/experiment/video/{{materialValue}}/" target="_blank">{{getHostname()}}/experiment/video/{{materialValue}}/</a>
+                  </div>
+
                 </div>
               </template>
 
@@ -158,10 +151,13 @@
                     </div>
                   </template>
                 </div>
-                <div class="sub-instruction">
-                  PDF Link:<br/>
-                  <a href="[[pdfMaterial]]" target="_blank">[[pdfMaterial]]</a>
-                </div>
+                <template is="dom-if" if="{{checkPDFSegments(pdfSegments)}}">
+                  <div class="sub-instruction">
+                    PDF Link:<br/>
+                    <a href="[[pdfMaterial]]" target="_blank">[[pdfMaterial]]</a>
+                  </div>
+                </template>
+
               </div>
 
             </div>
@@ -385,6 +381,10 @@
 
       checkVideoSegments: function(videoSegments) {
         return videoSegments.length > 0
+      },
+
+      checkPDFSegments: function(pdfSegments) {
+        return pdfSegments.length > 0
       },
 
       doneBlock: function() {
