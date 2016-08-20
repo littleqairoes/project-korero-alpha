@@ -650,19 +650,19 @@
         this.discussionid = data.discussionid
         this.linking = true;
         this.linkingEdit = true;
-        this.linkVideoStart = this.videotime;
-        this.linkVideoEnd = this.videotime;
-        this.visualstart = this.timeToString(this.videotime);
-        this.visualend = this.timeToString(this.videotime);
+        this.linkVideoStart = null;
+        this.linkVideoEnd = null;
+        this.visualstart = this.timeToString(0);
+        this.visualend = this.timeToString(this.videoduration);
         this.changeLinkVideoTime();
-        // setTimeout(function(){
-        //   if (this.$$('#start-play-time')) {
-        //     this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
-        //   }
-        //   if (this.$$('#end-play-time')) {
-        //     this.$$('#end-play-time').setAttribute('style', `left: 100%`);
-        //   }
-        // }.bind(this), 300)
+        setTimeout(function(){
+          if (this.$$('#start-play-time')) {
+            this.$$('#start-play-time').setAttribute('style', `left: 0%;`);
+          }
+          if (this.$$('#end-play-time')) {
+            this.$$('#end-play-time').setAttribute('style', `left: 100%`);
+          }
+        }.bind(this), 300)
 
         // this.linkVideoStart = this.videotime;
         // this.linkVideoEnd = this.linkVideoStart + (this.videoduration * 0.05);
