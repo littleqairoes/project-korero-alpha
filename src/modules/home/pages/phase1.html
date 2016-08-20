@@ -125,7 +125,13 @@
                     <div class="sub-instruction">
                       {{item.instruction}}
                     </div>
-                    <home-video-block videoid="[[materialValue]]" link-video-start="[[item.start]]" link-video-end="[[item.end]]"></home-video-block>
+                    <template is="dom-if" if="{{item.screen}}">
+                      <img src="[[item.screen]]" width="100%">
+                    </template>
+                    <template is="dom-if" if="{{!item.screen}}">
+                      <home-video-block videoid="[[materialValue]]" link-video-start="[[item.start]]" link-video-end="[[item.end]]"></home-video-block>
+                    </template>
+
                   </template>
                   <div class="sub-instruction">
                     Video Link:<br/>
@@ -265,15 +271,15 @@
 
       getMajorInstruciton: function(blockNumber) {
         if (blockNumber === 'demo') {
-          return "Reply by referring to these segments in these materials. Your reply should be succint and easy for readers to locate these segments in these materials."
+          return "Follow the instructions given."
         } else if (blockNumber === 'b1') {
-          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+          return "Reply by referring to the visual materials shown in this page. Your reply should allow readers to find the materials as accurate as possible.  "
         } else if (blockNumber === 'b2') {
-          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+          return "Reply by referring to section(s) of the visual material(s) shown in this page. Your reply should allow readers to find the material(s) and locate the respective section(s) as accurate as possible.  "
         } else if (blockNumber === 'b3') {
-          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+          return "Reply by referring to section(s) of the visual material(s) shown in this page. Your reply should allow readers to find the material(s) and locate the respective section(s) as accurate as possible.  "
         } else if (blockNumber === 'b4') {
-          return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
+          return "Reply by referring to section(s) of the visual material(s) shown in this page. Your reply should allow readers to find the material(s) and locate the respective section(s) as accurate as possible.  "
         }
         // return "Reply by referring to these materials. Your reply should be succinct and easy for readers to find these materials."
       },

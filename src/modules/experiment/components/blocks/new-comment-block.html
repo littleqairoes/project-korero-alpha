@@ -505,7 +505,7 @@
         sec = sec < 10 ? '0' + sec : sec;
         firebase.database().ref(ref).set(this.discussion).then(function(){
           this.$.toaster.show('Saved');
-          this.fire('save-comment', {finishTime: min+':'+sec});
+          this.fire('save-comment', {finishTime: parseInt(finishTimeSec, 10)});
         }.bind(this)).catch(function(err){
           this.$.toaster.show(err.message);
         }.bind(this));
