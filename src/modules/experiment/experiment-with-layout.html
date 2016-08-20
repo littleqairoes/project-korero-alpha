@@ -25,7 +25,7 @@
       module-route="{{moduleRoute}}"
       module-name="[[moduleName]]"
       page="[[page]]"
-      app-title="System"
+      app-title="[[appTitle]]"
       task-start="[[taskStart]]"
       user="{{user}}"
       >
@@ -49,6 +49,9 @@
         taskStart: {
           type: Number,
           notify: true
+        },
+        appTitle: {
+          type: String
         }
       },
 
@@ -84,7 +87,15 @@
 
       _pageChanged: function(page) {
         // load minimodule import on demand.
-
+        if (page === 'korero') {
+          this.appTitle = 'Korero'
+        } else if (page === 'adi') {
+          this.appTitle = "ADI"
+        } else if (page === 'forum') {
+          this.appTitle = "Forum"
+        } else {
+          this.appTitle = "System"
+        }
         // if (page === 'korero')
         this.importHref(
           this.resolveUrl(`pages/${page}-viewer.html`), null, null, true);
