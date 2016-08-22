@@ -254,6 +254,10 @@
         },
         task: {
           type: String
+        },
+        defaultSeq: {
+          type: String,
+          value: 'seq1'
         }
       },
       // behaviors
@@ -366,8 +370,12 @@
       },
 
       _seqDataChanged: function(seqNumber) {
-        console.log(seqNumber)
-        this.seqNumber = seqNumber || 'seq1'
+        var defaultSeq = 'seq1'
+        if (this.blockNumber !== 'demo') {
+          defaultSeq = 'seq7'
+        }
+        this.seqNumber = seqNumber || defaultSeq
+        console.log(this.seqNumber)
       },
 
       _setObjectChanged: function(setObject) {
@@ -402,7 +410,16 @@
           }
         }
         if (this.setArray[index]) {
-          window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq1');
+          if (this.setArray[index] === 'b1') {
+            window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq1');
+          } else if (this.setArray[index] === 'b2') {
+            window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq4');
+          } else if (this.setArray[index] === 'b3') {
+            window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq3');
+          } if (this.setArray[index] === 'b4') {
+            window.location.assign('/home/phase1/'+this.setNumber+'/'+this.setArray[index]+'/seq8');
+          }
+
         } else {
           window.location.assign('/home/done');
         }
