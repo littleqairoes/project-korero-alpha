@@ -424,7 +424,9 @@
       },
       _saveComment: function(e) {
         this.finishTime = e.detail.finishTime;
-        this.$.dialog.open();
+        if (this.task !== 'all' && this.videoid !== 'Ws63I3F7Moc' && this.videoid !== '2s3aJfRr9gE' && this.videoid !== 'qa_hksAzpSg') {
+          this.$.dialog.open();
+        }
         this._cancelComment();
       },
       doneBlock: function() {

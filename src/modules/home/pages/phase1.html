@@ -194,6 +194,14 @@
       </p>
       <paper-button on-tap="doneBlock" raised>Next</paper-button>
     </paper-dialog>
+
+    <paper-dialog id="dialog2">
+      <h2>Instruction</h2>
+      <p>
+        Practice Proper is Done. Click next to do the Experiment Proper.
+      </p>
+      <paper-button on-tap="tutorialDone" raised>Next</paper-button>
+    </paper-dialog>
   </template>
   <script>
     Polymer({
@@ -425,8 +433,14 @@
         }
       },
 
+      tutorialDone: function() {
+        window.location.assign('/home/phase1/'+this.setNumber+'/'+this.blockNumber+'/'+this.seqObject.next);
+      },
+
       next: function() {
-        if (this.seqObject.next === 'done') {
+        if (this.material === 'm9') {
+          this.$.dialog2.open();
+        } else if (this.seqObject.next === 'done') {
           this.$.dialog.open();
         } else {
           window.location.assign('/home/phase1/'+this.setNumber+'/'+this.blockNumber+'/'+this.seqObject.next);

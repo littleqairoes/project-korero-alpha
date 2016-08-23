@@ -18,10 +18,16 @@
       :host .scrubber-area {
         margin-left: 8px;
         margin-right: 8px;
+        height: 40px;
+        position: relative;
+        cursor: pointer;
+      }
+
+      :host .scrubber-grey {
+        margin-top: 17px;
         height: 5px;
         background-color: #AAA;
         position: relative;
-        cursor: pointer;
       }
 
       :host #video-play-time {
@@ -144,27 +150,31 @@
               id="video-scrubber-area"
             >
 
+              <div class="scrubber-grey">
+                <div id="video-play-time"></div>
+                <template is="dom-if" if="{{checkGeneral(linkVideoStart, linkingEdit)}}">
+                  <div id="linker-play-time"></div>
+                </template>
 
-              <div id="video-play-time"></div>
-              <template is="dom-if" if="{{checkGeneral(linkVideoStart, linkingEdit)}}">
-                <div id="linker-play-time"></div>
-              </template>
+                <div id="linking-play-time"></div>
+                <div id="discussion-play-time"></div>
+                <div id="comment-play-time"></div>
+                <div id="specific-play-time"></div>
 
-              <div id="linking-play-time"></div>
-              <div id="discussion-play-time"></div>
-              <div id="comment-play-time"></div>
-              <div id="specific-play-time"></div>
+                <template is="dom-if" if="{{visualstart}}">
+                  <div id="start-play-time">
+                    [[visualstart]]
+                  </div>
+                </template>
+                <template is="dom-if" if="{{visualend}}">
+                  <div id="end-play-time">
+                    [[visualend]]
+                  </div>
+                </template>
+              </div>
 
-              <template is="dom-if" if="{{visualstart}}">
-                <div id="start-play-time">
-                  [[visualstart]]
-                </div>
-              </template>
-              <template is="dom-if" if="{{visualend}}">
-                <div id="end-play-time">
-                  [[visualend]]
-                </div>
-              </template>
+
+
 
               <google-youtube
                 width="160px"
@@ -316,6 +326,7 @@
       },
 
       scrub: function(e) {
+        e.preventDefault();
         var el = this.$$('#video-scrubber-area');
         var elRect = el.getBoundingClientRect();
         var scrubPos = (e.detail.x - elRect.left) / elRect.width
@@ -396,7 +407,7 @@
       videoReady: function() {
         //var el = this.$$('#video-scrubber-area');
         this._resize();
-        this.$$('#video-content').setPlaybackQuality('medium');
+        this.$$('#video-content').setPlaybackQuality('small');
         this.play();
       },
 
