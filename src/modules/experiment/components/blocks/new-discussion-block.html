@@ -219,8 +219,8 @@
         }
         // e.target.focus();
         this.selected = this.showSelectionDiv();
-        this.viewOptions = true;
-        this.viewRefer = false;
+        this.viewOptions = false;
+        this.viewRefer = true;
         this.openHover(e);
       },
 
@@ -255,6 +255,7 @@
             left = elRect.width - 200;
           }
           this.$$('#options').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`);
+          this.refer(e);
         } else {
           this.$$('#options').setAttribute('style', `display: none`);
           // // this.selected.range.setStartAfter(e.target);
