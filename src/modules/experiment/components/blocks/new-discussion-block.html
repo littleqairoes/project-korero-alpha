@@ -10,6 +10,7 @@
 <link rel="import" href="thumbnails-block.html">
 
 <script src="../../../../../bower_components/chance/chance.js"></script>
+<script src="../../../../../bower_components/underscore/underscore.js"></script>
 <script src="../js/pdf.js"></script>
 
 <dom-module id="new-discussion-block">
@@ -213,7 +214,7 @@
       },
 
       commentChange: function(e) {
-        console.log(e)
+        // console.log(e)
         if (this.node) {
           this.checkNode();
         }
@@ -234,6 +235,7 @@
               break;
             }
           }
+          console.log(hasNode, this.selected)
           if (!hasNode && this.selected) {
             this.selected.range.deleteContents();
             this.selected.range.insertNode(document.createTextNode(this.node.innerHTML));
@@ -255,7 +257,7 @@
             left = elRect.width - 200;
           }
           this.$$('#options').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`);
-          this.refer(e);
+          this.refer();
         } else {
           this.$$('#options').setAttribute('style', `display: none`);
           // // this.selected.range.setStartAfter(e.target);
@@ -287,8 +289,7 @@
         }
       },
 
-      refer: function(e) {
-
+      refer: _.debounce(function() {
         if (this.selected.text && this.selected.text.length > 0) {
           this.node = document.createElement('span');
           this.node.innerHTML = this.selected.text;
@@ -308,7 +309,7 @@
           this.viewOptions = false;
           this.viewRefer = true;
         }
-      },
+      }, 200),
 
       referMore: function() {
         this.viewOptions = false;
