@@ -331,6 +331,9 @@
         var elRect = el.getBoundingClientRect();
         var scrubPos = (e.detail.x - elRect.left) / elRect.width
 
+        scrubPos = scrubPos <= 0 ? 0 : scrubPos;
+        scrubPos = scrubPos >= 1 ? 1 : scrubPos;
+
         this.$$('#video-thumbnail').setAttribute('style', `display: block; left: ${scrubPos * 100}%; top: -105px`);
 
 
@@ -407,12 +410,12 @@
       videoReady: function() {
         //var el = this.$$('#video-scrubber-area');
         this._resize();
-        this.$$('#video-content').setPlaybackQuality('small');
+        this.$$('#video-content').setPlaybackQuality('tiny');
         this.play();
       },
 
       videoThumbnailReady: function() {
-        this.$$('#video-thumbnail').setPlaybackQuality('small');
+        this.$$('#video-thumbnail').setPlaybackQuality('tiny');
         this.$$('#video-thumbnail').play();
         this.$$('#video-thumbnail').mute();
       },

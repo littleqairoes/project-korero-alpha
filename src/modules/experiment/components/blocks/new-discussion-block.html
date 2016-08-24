@@ -127,7 +127,7 @@
               <template is="dom-if" if="{{isKorero(ui)}}">
                 <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
               </template>
-              <paper-input label="Put link to external PDF" id="external"></paper-input>
+              <paper-input label="Insert link to external material" id="external"></paper-input>
               <paper-button raised on-tap="link">Link File</paper-button><br/>
             </div>
           </template>
@@ -507,6 +507,7 @@
       },
 
       post: function() {
+        this.closedThumbnailBlock();
         // console.log(this.$$('#text').innerHTML)
         this.set('discussion.title', this.$$('#title').value);
         this.set('discussion.text', this.$$('#text').innerHTML);
