@@ -222,7 +222,7 @@
         this.selected = this.showSelectionDiv();
         this.viewOptions = false;
         this.viewRefer = true;
-        this.openHover(e);
+        this.openHover();
       },
 
       checkNode: function() {
@@ -248,7 +248,7 @@
         }
       },
 
-      openHover: function(e) {
+      openHover: function(flag) {
         if (this.selected.text && this.selected.text.length > 0) {
           var elRect = this.$$('#new-discussion-block-content').getBoundingClientRect();
           var top = (this.selected.pos.top - elRect.top) + this.selected.pos.height + 64;
@@ -257,7 +257,7 @@
             left = elRect.width - 200;
           }
           this.$$('#options').setAttribute('style', `top: ${top}px; left: ${left}px; display: block`);
-          this.refer();
+          if (!flag) this.refer();
         } else {
           this.$$('#options').setAttribute('style', `display: none`);
           // // this.selected.range.setStartAfter(e.target);
@@ -314,7 +314,7 @@
       referMore: function() {
         this.viewOptions = false;
         this.viewRefer = true;
-        this.openHover();
+        this.openHover(true);
       },
 
       link: function(e) {

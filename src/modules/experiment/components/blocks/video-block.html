@@ -47,6 +47,15 @@
         opacity: 0.5;
       }
 
+      :host #show-linking-play-time {
+        height: 5px;
+        position: absolute;
+        background-color: blue;
+        width: 0px;
+        top: 0px;
+        opacity: 0.5;
+      }
+
       :host #linker-play-time {
         height: 5px;
         position: absolute;
@@ -157,6 +166,7 @@
                 </template>
 
                 <div id="linking-play-time"></div>
+                <div id="show-linking-play-time"></div>
                 <div id="discussion-play-time"></div>
                 <div id="comment-play-time"></div>
                 <div id="specific-play-time"></div>
@@ -172,10 +182,6 @@
                   </div>
                 </template>
               </div>
-
-
-
-
               <google-youtube
                 width="160px"
                 height="90px"
@@ -253,13 +259,22 @@
         linking: {
           type: Boolean
         },
+        showLinkingFlag: {
+          type: Boolean
+        },
         linkingEdit: {
           type: Boolean
         },
         linkVideoStart: {
           type: Number
         },
+        showLinkingVideoStart: {
+          type: Number
+        },
         linkVideoEnd: {
+          type: Number
+        },
+        showLinkingVideoEnd: {
           type: Number
         },
         playspecific: {
@@ -341,7 +356,6 @@
         this.$$('#video-thumbnail').seekTo(time);
         this.$$('#video-thumbnail').play();
 
-
         if (this.linking) {
           this.linkVideoStart = time;
           this.linkVideoEnd = time;
@@ -394,6 +408,8 @@
           this.visualend = this.timeToString(this.commentend);
           this.changeCommentTime();
           this.$$('#video-content').seekTo(this.commentstart);
+        } else if (this.showLinkingFlag) {
+
         } else {
           this.changeVideoTime(time);
           this.$$('#video-content').seekTo(this.videoduration != 1 ? this.videoduration * scrubPos : 0);
@@ -459,6 +475,14 @@
             this.$$('#video-content').seekTo(this.playstart);
             this.play();
           }
+        } else if (this.showLinkingFlag) {
+          if (time >= this.showLinkingVideoEnd) {
+            this.$$('#video-content').seekTo(this.showLinkingVideoStart);
+            this.play();
+          } else if (time < this.showLinkingVideoStart) {
+            this.$$('#video-content').seekTo(this.showLinkingVideoStart);
+            this.play();
+          }
         }
       },
 
@@ -468,6 +492,15 @@
         setTimeout(function(){
           this.$$('#start-play-time').setAttribute('style', `left: ${(this.linkVideoStart/this.videoduration)*100}%;`);
           this.$$('#end-play-time').setAttribute('style', `left: ${(this.linkVideoEnd/this.videoduration)*100}%`);
+        }.bind(this), 100)
+      },
+
+      changeShowLinkVideoTime: function() {
+        var elPlayTime = this.$$('#linking-play-time');
+        elPlayTime.setAttribute('style', `left: ${(this.showLinkingVideoStart/this.videoduration)*100}%; width: ${((this.showLinkingVideoEnd - this.showLinkingVideoStart)/this.videoduration)*100}%`);
+        setTimeout(function(){
+          this.$$('#start-play-time').setAttribute('style', `left: ${(this.showLinkingVideoStart/this.videoduration)*100}%;`);
+          this.$$('#end-play-time').setAttribute('style', `left: ${(this.showLinkingVideoEnd/this.videoduration)*100}%`);
         }.bind(this), 100)
       },
 
@@ -686,17 +719,28 @@
       },
 
       showLinking: function(start, end, tap) {
-        this.linking = true;
+        this.showLinkingFlag = true;
         if (start && end) {
-          this.linkVideoStart = start;
-          this.linkVideoEnd = end;
+          this.showLinkingVideoStart = start;
+          this.showLinkingVideoEnd = end;
           this.linkTapped = tap;
-          this.changeLinkVideoTime();
-          this.$$('#video-content').seekTo(this.linkVideoStart);
+          this.changeShowLinkVideoTime();
+          this.$$('#video-content').seekTo(this.showLinkingVideoStart);
         } else {
           this.$$('#video-content').seekTo(0)
         }
         this.play();
+      },
+
+      resetShowLinking: function() {
+        if (!this.linkTapped) {
+          this.showLinkingVideoStart = 0;
+          this.showLinkingVideoEnd = 0;
+          this.showLinkingFlag = false;
+          var elPlayTime = this.$$('#show-linking-play-time');
+          elPlayTime.setAttribute('style', `left: 0; width: 0`);
+          this.pause();
+        }
       },
 
       saveLinking: function() {
