@@ -4,6 +4,7 @@
 <link rel="import" href="../../../../../bower_components/paper-tooltip/paper-tooltip.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/communication-icons.html">
+<link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 <link rel="import" href="../blocks/new-discussion-block.html">
 <link rel="import" href="../blocks/discussion-block.html">
@@ -30,6 +31,12 @@
         position: fixed;
         bottom: 20px;
         right: 20px;
+      }
+
+      :host #phase3-button {
+        position: fixed;
+        bottom: 20px;
+        right: 80px;
       }
 
       :host #discussion-area-content h3 {
@@ -145,6 +152,21 @@
           animation-delay="0">
           Add Discussion
         </paper-tooltip>
+
+        <template is="dom-if" if="{{_checkPhase3(participant)}}">
+          <paper-fab
+            id="phase3-button"
+            icon="icons:chrome-reader-mode"
+            on-tap="_openPhase3">
+          </paper-fab>
+          <paper-tooltip
+            for="phase3-button"
+            position="left"
+            animation-delay="0">
+            Open
+          </paper-tooltip>
+        </template>
+
         <template is="dom-if" if="{{viewThumbnailBlock}}">
           <div class="thumbnails-block-container">
             <thumbnails-block
@@ -163,6 +185,15 @@
         </template>
       </div>
     </paper-material>
+
+    <paper-dialog id="phase3Dialog">
+      <h2>Instruction</h2>
+      <!--<p>-->
+      <!--  You have taken {{finishTime}} seconds to write the reply.-->
+      <!--  Fill in the questionnaire questions for this trial, and click OK to close this window-->
+      <!--</p>-->
+      <!--<paper-button on-tap="doneBlock" raised>Ok</paper-button>-->
+    </paper-dialog>
   </template>
 
   <script>
@@ -380,6 +411,12 @@
       },
       _saveDiscussion: function() {
         this._cancelDiscussion();
+      },
+      _checkPhase3: function(participant) {
+        return participant === 'phase3'
+      },
+      _openPhase3: function() {
+        this.$$('#phase3Dialog').open();
       }
     });
   </script>

@@ -1,0 +1,127 @@
+<link rel="import" href="../../../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../../../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../../../../bower_components/polymerfire/firebase-auth.html">
+<link rel="import" href="../../../../bower_components/polymerfire/firebase-document.html">
+<link rel="import" href="../../../../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../../../../bower_components/paper-input/paper-input.html">
+
+<dom-module id="home-phase3-root">
+  <template>
+    <style include="iron-flex iron-flex-alignment iron-flex-factors">
+      :host .text-center {
+        padding: 20px;
+        margin-top: 150px;
+      }
+    </style>
+
+    <firebase-auth
+      id="auth"
+      provider="google"
+      signed-in="{{signedIn}}"
+      user="{{user}}">
+    </firebase-auth>
+
+    <firebase-document
+      id="participant"
+      path="/users/{{user.uid}}"
+      data="{{participant}}">
+    </firebase-document>
+
+    <div class="horizontal layout">
+      <div class="flex">
+      </div>
+      <div class="flex">
+        <paper-material>
+
+          <div class="text-center">
+            Experiment Part 2:
+            <template is="dom-if" if="{{!user}}">
+              <div style="text-align: center">
+                <paper-button on-tap="login">Login</paper-button>
+              </div>
+
+            </template>
+            <template is="dom-if" if="{{user}}">
+              <div style="text-align: center">
+                UID: {{user.uid}}
+              </div>
+              <paper-input label="Participant #" id="title" value="{{participant.number}}" on-change="changeParticipant" pattern="^(0|[1-9][0-9]*)$"></paper-input><br/>
+              <template is="dom-if" if="{{participant.number}}">
+                <div style="text-align: center">
+                  <paper-button on-tap="openDialog">Next</paper-button>
+                </div>
+              </template>
+            </template>
+          </div>
+        </paper-material>
+      </div>
+      <div class="flex">
+      </div>
+    </div>
+
+    <paper-dialog id="dialog">
+      <h2>Instruction</h2>
+      <p>
+        Before going to the next part. Please answer this questionnaire. We will be using this questionnaire while doing the experiment (Please keep it open)<br/>
+      </p>
+      <div style="text-align: center">
+        <a href="https://drive.google.com/open?id=1MXtQIaw6jlmg_NRYDajuFig-RW0YP_OUj7uAchlnMfs">Open Questionnaire</a>
+      </div>
+
+      <p>
+        After answering, please click next for the demo of the interfaces.
+      </p>
+      <paper-button on-tap="next">Next</paper-button>
+    </paper-dialog>
+    <paper-toast id="toaster"></paper-toast>
+  </template>
+  <script>
+    Polymer({
+      is: 'home-phase3-root',
+      properties: {
+        user: {
+          type: Object,
+          notify: true
+        },
+        participant: {
+          type: Object,
+          value: {}
+        }
+      },
+      login: function() {
+        this.$.auth.signInAnonymously().then(function(result) {
+          this.$.toaster.show(`Welcome ${result.uid}!`);
+        }.bind(this)).catch(this._catchError.bind(this));
+      },
+      changeParticipant: function(e) {
+        var number = e.target.value
+
+        console.log(this.$.participant.path)
+        firebase.database().ref(this.$.participant.path).set({
+          number: number
+        }).then(function(){
+          console.log(number)
+          this.user.updateProfile({
+            displayName: 'P'+number
+          })
+        }.bind(this))
+      },
+      openDialog: function() {
+        this.$.dialog.open();
+      },
+      next: function() {
+        var number = parseInt(this.participant.number, 10);
+        if (!isNaN(number)) {
+          console.log(number%4)
+          var setNumber = (number % 4) + 1;
+          window.location.assign('/home/phase3/s'+setNumber);
+          // window.open('/home/phase1/s' + setNumber);
+        } else {
+          this.$.toaster.show(`Participant number is not a number!`);
+        }
+      }
+    });
+  </script>
+</dom-module>

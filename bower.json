@@ -33,7 +33,10 @@
     "chance": "^1.0.3",
     "paper-spinner": "^1.2.0",
     "underscore": "^1.8.3",
-    "paper-dialog": "^1.1.0"
+    "paper-dialog": "^1.1.0",
+    "paper-toggle-button": "^1.2.0",
+    "sanitize-html": "^1.11.4",
+    "marked": "^0.3.6"
   },
   "devDependencies": {
     "web-component-tester": "^4.0.0"

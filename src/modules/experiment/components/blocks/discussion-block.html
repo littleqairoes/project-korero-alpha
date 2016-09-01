@@ -132,10 +132,13 @@
                   ui="[[ui]]"
                   task="[[task]]"
                   user="[[user]]"
+                  discussion-id="[[discussion.$key]]"
+                  videoid="[[videoid]]"
                   on-mouseover-node="_openThumbnailBlock"
                   on-mouseout-node="_mouseoutNode"
                   on-tap-node="_openThumbnailBlock"
                   on-close-edit-activity="_closeEditActivity"
+                  participant="[[participant]]"
                 ></comment-block>
               </template>
 
@@ -272,8 +275,8 @@
         return ui === 'korero';
       },
       checkUI: function(item, task, user, ui, participant) {
-        console.log(participant)
-        return ui === item.ui && (task === 'all' || (participant === 'user' && user.uid === item.user) || participant === item.user || participant === item.participantNumber);
+        // console.log(item)
+        return (item.participantNumber && parseInt(item.participantNumber.replace('P', ''), 10) < 100) && ui === item.ui && (task === 'all' || participant === 'all' || (participant === 'user' && user.uid === item.user) || participant === item.user || participant === item.participantNumbe || (participant === 'phase3' && item.phase3));
       },
       play: function() {
         this.fire('play-specific', {videostart: this.discussion.start, videoend: this.discussion.end})

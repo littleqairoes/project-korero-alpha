@@ -1,10 +1,10 @@
 <link rel="import" href="../../../../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../../../../bower_components/paper-material/paper-material.html">
+<link rel="import" href="../../../../../bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="../../../../../bower_components/iron-icons/iron-icons.html">
 <link rel="import" href="../../../../../bower_components/iron-icon/iron-icon.html">
 <link rel="import" href="thumbnails-block.html">
 <script src="../../../../../bower_components/chance/chance.js"></script>
-
 
 <dom-module id="comment-block">
   <template>
@@ -63,6 +63,11 @@
         padding-top: 10px;
         font-size: 0.7em;
       }
+
+      :host .toggler , .comment-number{
+        padding: 20px;
+        font-size: 0.8em;
+      }
     </style>
 
     <paper-material>
@@ -80,7 +85,23 @@
         </div>
         <hr>
         <div class="text" id="comment-text"></div>
+
       </div>
+      <template is="dom-if" if="{{_checkParticipantAll(participant)}}">
+        <div class="comment-number">
+          Participant: {{comment.participantNumber}}<br/>
+          Words: {{commentNumber}}
+        </div>
+        <div class="horizontal layout toggler">
+          <div class="flex">
+            Show on Phase 3?
+          </div>
+          <paper-toggle-button
+            id="see-on-phase3"
+            on-change="onPhase3"
+          ></paper-toggle-button>
+        </div>
+      </template>
     </paper-material>
 
     <template is="dom-if" if="{{viewThumbnailBlock}}" id="thumbnailblockif">
@@ -89,6 +110,8 @@
         on-close-thumbnails-block="_mouseoutNode">
       </thumbnails-block>
     </template>
+
+    <paper-toast id="toaster"></paper-toast>
   </template>
 
   <script>
@@ -102,14 +125,49 @@
         viewThumbnailBlock: {
           type: Boolean,
           value: false
+        },
+        participant: {
+          type: String
+        },
+        videoid: {
+          type: String
+        },
+        discussionId: {
+          type: String
+        },
+        commentNumber: {
+          type: Number
         }
       },
       listeners: {
         'mouseout': '_mouseoutNode'
       },
       observers: [
-        '_renderText(comment.text)'
+        '_renderText(comment.text)',
+        '_checkPublish(comment.phase3)',
       ],
+
+      _checkPublish: function(o) {
+        if (this.$$('#see-on-phase3')) {
+          this.$$('#see-on-phase3').checked = this._forceZero(o, false);
+        }
+      },
+
+      _checkParticipantAll: function(participant) {
+        return participant === 'all'
+      },
+
+      onPhase3: function(e) {
+        var checked = e.target.checked;
+        var updates = {};
+        updates['korero/' + this.videoid + '/comments/' + this.discussionId + '/' + this.comment.$key + '/phase3'] = checked ? true : false;
+        console.log(updates)
+        firebase.database().ref().update(updates).then(function() {
+          this.$.toaster.show('Saved')
+        }.bind(this)).catch(function(error) {
+          this.$.toaster.show(error.message)
+        }.bind(this))
+      },
 
       showDate: function(utc) {
         if (utc) {
@@ -162,6 +220,7 @@
       _renderText: function(text) {
         var el = this.$$('#comment-text');
         el.innerHTML = text;
+        this.commentNumber = el.textContent.split(' ').length;
         var nodes = Polymer.dom(el).childNodes;
         this.renderNode(nodes)
 
