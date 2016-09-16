@@ -123,12 +123,12 @@
           </template>
           <template is="dom-if" if="{{viewRefer}}">
             <div class="refer-view">
-              <b>Reference this term to:</b><br/>
+              <b>Refer this term to:</b><br/>
               <template is="dom-if" if="{{isKorero(ui)}}">
-                <paper-button raised on-tap="linkvideo">This Lecture Video</paper-button><br/>
+                <paper-button raised on-tap="linkvideo" style="font-size: 0.7em">This Lecture Video</paper-button><br/>
               </template>
-              <paper-input label="Insert link to external material" id="external"></paper-input>
-              <paper-button raised on-tap="link">Link File</paper-button><br/>
+              <paper-input label="Link other materials" id="external"></paper-input>
+              <paper-button raised on-tap="link">Link Materials</paper-button><br/>
             </div>
           </template>
         </paper-material>

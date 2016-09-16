@@ -67,11 +67,15 @@
       }
     </style>
 
-    <firebase-query
-      id="commentquery"
-      path="/korero/[[videoid]]/comments/[[discussion.$key]]"
-      data="{{commentdata}}">
-    </firebase-query>
+    <template is="dom-if" if="{{checkParticipant(participant)}}">
+      <firebase-query
+        id="commentquery"
+        path="/korero/[[videoid]]/comments/[[discussion.$key]]"
+        data="{{commentdata}}"
+        order-by-child="{{key}}"
+        limit-to-last="{{limit}}">
+      </firebase-query>
+    </template>
 
     <paper-material >
       <div class="horizontal layout center" >
@@ -88,7 +92,7 @@
             <h3 class="title" id="discussion-title">{{discussion.title}}</h3>
             <div class="by-line">
               By: {{randomName(task, user)}}<br/>
-              Created On: {{showDate(discussion.createdOn)}}
+              Posted On: {{showDate(discussion.createdOn)}}
             </div>
             <hr>
             <div class="text" id="discussion-text"></div>
@@ -139,6 +143,7 @@
                   on-tap-node="_openThumbnailBlock"
                   on-close-edit-activity="_closeEditActivity"
                   participant="[[participant]]"
+                  on-change-task-start="ontimestart"
                 ></comment-block>
               </template>
 
@@ -202,6 +207,12 @@
         },
         taskStart: {
           type: Number
+        },
+        key: {
+          type: String
+        },
+        limit: {
+          type: Number
         }
       },
 
@@ -237,7 +248,12 @@
         if (sec < 10) {
           sec = '0'+sec.toString(10)
         }
-        return new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+        var dateval = new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+        var options = {
+          weekday: "long", year: "numeric", month: "short",
+          day: "numeric", hour: "2-digit", minute: "2-digit"
+        };
+        return dateval.toLocaleTimeString("en-us", options)
       },
 
       randomName: function(task, user) {
@@ -246,6 +262,41 @@
         }
         return chance.name()
 
+      },
+
+      checkKey: function(participant) {
+        if (participant === 'phase3') {
+          return 'phase3'
+        }
+        return '';
+      },
+
+      checkEqualTo: function(participant) {
+        if (participant === 'phase3') {
+          return 1
+        }
+        return ''
+      },
+
+      checkLimit: function(participant) {
+        if (participant === 'phase3') {
+          return 1
+        }
+        return ''
+      },
+
+      checkParticipant: function(participant) {
+        if (participant != null || participant != undefined) {
+          if (participant === 'phase3') {
+            this.key = 'phase3'
+            this.limit = 1
+          } else {
+            this.key = ''
+            this.limit = ''
+          }
+          return true
+        }
+        return false
       },
 
       getUTC: function() {
@@ -267,6 +318,11 @@
           console.log(this.discussion.task, this.task, this.discussion.task === this.task)
           this.fire('change-task-start', {taskStart: this.taskStart});
         }
+      },
+      ontimestart: function(e) {
+        console.log(e.detail)
+        this.taskStart = e.detail.taskStart
+        this.fire('change-task-start', e.detail);
       },
       timeToString: function(time) {
         return parseInt(time / 60, 10) + ':' + (parseInt(time % 60, 10) < 10 ? '0' : '') + parseInt(time % 60, 10);

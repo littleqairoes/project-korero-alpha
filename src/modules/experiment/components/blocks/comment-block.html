@@ -80,7 +80,7 @@
       <div id="comment-block-content">
         <div class="by-line">
           By: {{randomName(task, user)}}<br/>
-          Created On: {{showDate(comment.createdOn)}}
+          Posted On: {{showDate(comment.createdOn)}}
 
         </div>
         <hr>
@@ -90,6 +90,7 @@
       <template is="dom-if" if="{{_checkParticipantAll(participant)}}">
         <div class="comment-number">
           Participant: {{comment.participantNumber}}<br/>
+          Time: {{computeTime(comment)}}<br/>
           Words: {{commentNumber}}
         </div>
         <div class="horizontal layout toggler">
@@ -137,6 +138,9 @@
         },
         commentNumber: {
           type: Number
+        },
+        taskStart: {
+          type: Number
         }
       },
       listeners: {
@@ -144,23 +148,70 @@
       },
       observers: [
         '_renderText(comment.text)',
-        '_checkPublish(comment.phase3)',
+        '_checkPublish(comment.phase3, participant)',
       ],
 
-      _checkPublish: function(o) {
-        if (this.$$('#see-on-phase3')) {
-          this.$$('#see-on-phase3').checked = this._forceZero(o, false);
+      getUTC: function() {
+        var t = new Date();
+        var y = t.getFullYear();
+        var m = t.getMonth();
+        var d = t.getDate();
+        var h = t.getHours();
+        var min = t.getMinutes();
+        var s = t.getSeconds();
+        var mil = t.getMilliseconds();
+
+        return Date.UTC(y, m, d, h, min, s, mil);
+      },
+
+      ready: function() {
+        this.taskStart = this.getUTC();
+        // console.log(this.discussion.task, this.task, this.discussion.task === this.task)
+        // if (this.discussion.task === this.task) {
+          // console.log(this.discussion.task, this.task, this.discussion.task === this.task)
+          console.log(this.taskStart)
+        this.fire('change-task-start', {taskStart: this.taskStart, comment: true});
+        // }
+      },
+
+      _forceZero: function(a, zeroValue) {
+        if (zeroValue === null || zeroValue === undefined) zeroValue = false;
+        return typeof a === 'object' && this._isEmpty(a) ? zeroValue : a;
+      },
+
+      _isEmpty: function(obj) {
+        for(var prop in obj) {
+          if(obj.hasOwnProperty(prop))
+            return false;
         }
+
+        return JSON.stringify(obj) === JSON.stringify({});
+      },
+
+      _checkPublish: function(o, p) {
+        console.log(o, p)
+
+        setTimeout(function(){
+          if (this.$$('#see-on-phase3')) {
+            this.$$('#see-on-phase3').checked = this._forceZero(o, false) ? true : false;
+          }
+        }.bind(this), 500)
+
+
       },
 
       _checkParticipantAll: function(participant) {
         return participant === 'all'
       },
 
+      computeTime: function(item) {
+        return (item.taskEnd - item.taskStart)/1000
+      },
+
       onPhase3: function(e) {
         var checked = e.target.checked;
         var updates = {};
-        updates['korero/' + this.videoid + '/comments/' + this.discussionId + '/' + this.comment.$key + '/phase3'] = checked ? true : false;
+        updates['korero/' + this.videoid + '/comments/' + this.discussionId + '/' + this.comment.$key + '/phase3'] = checked ? 1 : false;
         console.log(updates)
         firebase.database().ref().update(updates).then(function() {
           this.$.toaster.show('Saved')
@@ -194,13 +245,19 @@
         if (sec < 10) {
           sec = '0'+sec.toString(10)
         }
-        return new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+        var dateval = new Date('2016-0'+month+'-'+day+'T'+hour+':'+min+':'+sec);
+
+        var options = {
+          weekday: "long", year: "numeric", month: "short",
+          day: "numeric", hour: "2-digit", minute: "2-digit"
+        };
+        return dateval.toLocaleTimeString("en-us", options)
       },
 
       randomName: function(task, user) {
-        if (task === 'all') {
-          return chance.name() + " - aka: " + user.uid;
-        }
+        // if (task === 'all') {
+        //   return chance.name() + " - aka: " + user.uid;
+        // }
 
         return chance.name()
 

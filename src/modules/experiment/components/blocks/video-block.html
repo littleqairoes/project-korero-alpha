@@ -426,7 +426,7 @@
       videoReady: function() {
         //var el = this.$$('#video-scrubber-area');
         this._resize();
-        this.$$('#video-content').setPlaybackQuality('tiny');
+        // this.$$('#video-content').setPlaybackQuality('tiny');
         this.play();
       },
 
@@ -451,6 +451,7 @@
       changeVideoTime: function(time) {
         var elPlayTime = this.$$('#video-play-time');
         elPlayTime.setAttribute('style', `width: ${(time/this.videoduration)*100}%`);
+        console.log(this.linking, this.showLinkingFlag)
         if (this.linking) {
           if (time >= this.linkVideoEnd) {
             this.$$('#video-content').seekTo(this.linkVideoStart);
@@ -468,20 +469,31 @@
             this.play();
           }
         } else if (this.playspecific) {
-          if (time >= this.playend) {
-            this.$$('#video-content').seekTo(this.playstart);
-            this.play();
-          } else if (time < this.playstart) {
-            this.$$('#video-content').seekTo(this.playstart);
-            this.play();
+          if (this.playstart != null || this.playstart != undefined) {
+            if (time >= this.playend) {
+              this.$$('#video-content').seekTo(this.playstart);
+              this.play();
+            } else if (time < this.playstart) {
+              this.$$('#video-content').seekTo(this.playstart);
+              this.play();
+            }
+          } else if (time < 0 || time >= this.videoduration){
+             this.$$('#video-content').seekTo(0);
+             this.play();
           }
+
         } else if (this.showLinkingFlag) {
-          if (time >= this.showLinkingVideoEnd) {
-            this.$$('#video-content').seekTo(this.showLinkingVideoStart);
-            this.play();
-          } else if (time < this.showLinkingVideoStart) {
-            this.$$('#video-content').seekTo(this.showLinkingVideoStart);
-            this.play();
+          if (this.showLinkingVideoStart != null || this.showLinkingVideoStart != undefined) {
+            if (time >= this.showLinkingVideoEnd) {
+              this.$$('#video-content').seekTo(this.showLinkingVideoStart);
+              this.play();
+            } else if (time < this.showLinkingVideoStart) {
+              this.$$('#video-content').seekTo(this.showLinkingVideoStart);
+              this.play();
+            }
+          } else if (time < 0 || time >= this.videoduration){
+             this.$$('#video-content').seekTo(0);
+             this.play();
           }
         }
       },
@@ -499,8 +511,8 @@
         var elPlayTime = this.$$('#linking-play-time');
         elPlayTime.setAttribute('style', `left: ${(this.showLinkingVideoStart/this.videoduration)*100}%; width: ${((this.showLinkingVideoEnd - this.showLinkingVideoStart)/this.videoduration)*100}%`);
         setTimeout(function(){
-          this.$$('#start-play-time').setAttribute('style', `left: ${(this.showLinkingVideoStart/this.videoduration)*100}%;`);
-          this.$$('#end-play-time').setAttribute('style', `left: ${(this.showLinkingVideoEnd/this.videoduration)*100}%`);
+          if (this.$$('#start-play-time')) this.$$('#start-play-time').setAttribute('style', `left: ${(this.showLinkingVideoStart/this.videoduration)*100}%;`);
+          if (this.$$('#end-play-time')) this.$$('#end-play-time').setAttribute('style', `left: ${(this.showLinkingVideoEnd/this.videoduration)*100}%`);
         }.bind(this), 100)
       },
 
@@ -719,6 +731,7 @@
       },
 
       showLinking: function(start, end, tap) {
+        console.log(start, end)
         this.showLinkingFlag = true;
         if (start && end) {
           this.showLinkingVideoStart = start;
@@ -734,8 +747,8 @@
 
       resetShowLinking: function() {
         if (!this.linkTapped) {
-          this.showLinkingVideoStart = 0;
-          this.showLinkingVideoEnd = 0;
+          this.showLinkingVideoStart = null;
+          this.showLinkingVideoEnd = null;
           this.showLinkingFlag = false;
           var elPlayTime = this.$$('#show-linking-play-time');
           elPlayTime.setAttribute('style', `left: 0; width: 0`);

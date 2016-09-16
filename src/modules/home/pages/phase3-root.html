@@ -121,6 +121,9 @@
         } else {
           this.$.toaster.show(`Participant number is not a number!`);
         }
+      },
+      _catchError: function(err) {
+        this.$.toaster.show(err.message);
       }
     });
   </script>
