@@ -24,6 +24,8 @@
 
       :host #discussion-block-content {
         padding: 10px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
         margin-bottom: 5px;
       }
 
@@ -65,6 +67,10 @@
       :host #dialog {
         padding: 20px;
       }
+
+      :host .hidden {
+        display: none;
+      }
     </style>
 
     <template is="dom-if" if="{{checkParticipant(participant)}}">
@@ -79,30 +85,48 @@
 
     <paper-material >
       <div class="horizontal layout center" >
-        <div class="time" on-tap="play">
-          <template is="dom-if" if="{{!discussion.videolink}}">
-            <iron-icon icon="icons:language"></iron-icon>
-          </template>
-          <template is="dom-if" if="{{discussion.videolink}}">
-            <iron-icon icon="icons:radio-button-checked"></iron-icon><br/>[[timeToString(discussion.start)]]
-          </template>
-        </div>
+
         <div class="flex">
           <div id="discussion-block-content">
-            <h3 class="title" id="discussion-title">{{discussion.title}}</h3>
-            <div class="by-line">
-              By: {{randomName(task, user)}}<br/>
-              Posted On: {{showDate(discussion.createdOn)}}
+            <div class="">
+
+              <h3 class="title flex" id="discussion-title">
+                <span on-tap="toggleHide" style="cursor: pointer">{{showDiscussionTitle(discussion.title)}}</span>
+              </h3>
             </div>
+            <div class="horizontal layout center">
+              <div class="time" on-tap="play">
+                <template is="dom-if" if="{{!discussion.videolink}}">
+                  <iron-icon icon="icons:language"></iron-icon>
+                </template>
+                <template is="dom-if" if="{{discussion.videolink}}">
+                  <iron-icon icon="icons:radio-button-checked"></iron-icon> [[timeToString(discussion.start)]]
+                </template>
+              </div>
+              <div class="by-line flex">
+                By: {{randomName(task, user)}}<br/>
+                Posted On: {{showDate(discussion.createdOn)}}
+              </div>
+            </div>
+
             <hr>
-            <div class="text" id="discussion-text"></div>
+            <div class$="text [[_hideToggleChanged(hideToggle)]]" id="discussion-text"></div>
           </div>
           <template is="dom-if" if="{{!viewNewCommentBlock}}">
-          <div class="">
-            <paper-button on-tap="reply">
-              Reply
-            </paper-button>
-          </div>
+            <div class="">
+              <paper-button on-tap="reply" style="font-size: 0.7em">
+                Reply
+              </paper-button>
+
+              <paper-button class$="[[_hideToggleChangedReversed(hideToggle)]]" on-tap="toggleHide" style="font-size: 0.7em">
+                Show thread
+              </paper-button>
+
+              <paper-button class$="[[_hideToggleChanged(hideToggle)]]" on-tap="toggleHide" style="font-size: 0.7em">
+                Hide thread
+              </paper-button>
+            </div>
+
           </template>
 
           <template is="dom-if" if="{{viewNewCommentBlock}}">
@@ -128,9 +152,9 @@
             ></new-comment-block>
           </template>
 
-          <div class="comments">
+          <div class$="comments [[_hideToggleChanged(hideToggle)]]">
             <template is="dom-repeat" items="{{commentdata}}">
-              <template is="dom-if" if="{{checkUI(item, task, user, ui, participant)}}">
+              <template is="dom-if" if="checkUI(item, task, user, ui, participant)">
                 <comment-block
                   comment="{{item}}"
                   ui="[[ui]]"
@@ -213,6 +237,10 @@
         },
         limit: {
           type: Number
+        },
+        hideToggle: {
+          type: Boolean,
+          value: true
         }
       },
 
@@ -223,9 +251,32 @@
       listeners: {
         'mouseout': '_mouseoutNode'
       },
+
+      showDiscussionTitle: function(t) {
+        return t ? t : 'Discussion Thread';
+      },
+
+      _hideToggleChanged: function(h) {
+        return h ? 'hidden' : '';
+      },
+
+      _hideToggleChangedReversed: function(h) {
+        return !h ? 'hidden' : '';
+      },
+
+      toggleHide: function() {
+        this.hideToggle = !this.hideToggle;
+      },
       showDate: function(utc) {
+        var options = {
+          weekday: "long", year: "numeric", month: "short",
+          day: "numeric", hour: "2-digit", minute: "2-digit"
+        };
+
         if (utc) {
-          return new Date(utc);
+          var d = new Date(utc).toLocaleTimeString("en-us", options);
+          console.log(d)
+          return d
         }
         var month = parseInt(Math.random()*7, 10);
         if (month === 0) month = 01
@@ -258,7 +309,7 @@
 
       randomName: function(task, user) {
         if (task === 'all') {
-          return chance.name() + " - aka: " + user.uid;
+          return chance.name() // + " - aka: " + user.uid;
         }
         return chance.name()
 

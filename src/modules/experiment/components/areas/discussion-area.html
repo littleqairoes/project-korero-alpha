@@ -105,7 +105,7 @@
             user="[[user]]"
           ></new-discussion-block>
         </template>
-        <h3>General Discussions</h3>
+        <!--<h3 style="padding: 0px; margin: 0px; margin-left: 10px; margin-bottom: 5px; margin-top: 10px">Discussion Threads</h3>-->
         <template is="dom-repeat" items="{{discussions}}">
           <template is="dom-if" if="{{checkUI(item.ui, task, item)}}">
             <discussion-block
@@ -130,7 +130,7 @@
             ></discussion-block>
           </template>
         </template>
-        <h3>Specific Discussions</h3>
+        <!--<h3>Specific Discussions</h3>-->
         <template is="dom-repeat" items="{{specifics}}">
           <template is="dom-if" if="{{checkUI(item.ui, task, item)}}">
             <discussion-block
